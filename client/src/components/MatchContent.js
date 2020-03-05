@@ -17,8 +17,8 @@ class MatchContent extends Component {
 
   state = {
     retrieved: '',
-    competition: '',
-    competitionKey: '',
+    competition: 'Invalid',
+    competitionKey: 'Invalid',
     markForFollowUp: false,
     formStage: 0,
     validatedStage0: true,
@@ -44,7 +44,7 @@ class MatchContent extends Component {
     scout: this.context.user.username,
     matchNum1: '',
     matchNum2: '',
-    allianceStation: 'Red Station 1',
+    allianceStation: 'Choose...',
     autoTeam: true,
     teamNum: '',
     autoPowerCells: 0,
@@ -131,13 +131,13 @@ class MatchContent extends Component {
     window.onbeforeunload = function() {
       return '';
     };
-    if (this.props.match.url === '/matches/new') {
+    if (this.props.match.path === '/matches/:competition') {
       fetch('/competitions')
         .then(response => response.json())
         .then(data => {
           this.setState({ retrieved: 'valid' });
           data.competitions.map(c => {
-            if (c.iscurrent) {
+            if (c.shortname === this.props.match.params.competition) {
               this.setState({ competition: c.shortname });
               this.setState({ competitionKey: c.bluekey });
             }
@@ -149,7 +149,7 @@ class MatchContent extends Component {
       )
         .then(response => response.json())
         .then(data => {
-          if (data.matchFormData.length == 0) {
+          if (data.matchFormData.length === 0) {
             this.setState({ retrieved: 'invalid' });
           } else {
             this.setState({ retrieved: 'valid' });
@@ -283,7 +283,11 @@ class MatchContent extends Component {
   };
 
   checkStage0() {
-    if (this.state.matchNum1 !== '' && this.state.teamNum !== '') {
+    if (
+      this.state.matchNum1 !== '' &&
+      this.state.teamNum !== '' &&
+      this.state.allianceStation !== 'Choose...'
+    ) {
       if (this.state.matchTypeKey !== 'qm') {
         if (this.state.matchNum2 !== '') {
           this.setState({ validStage0: true });
@@ -339,7 +343,6 @@ class MatchContent extends Component {
     )
       .then(response => response.json())
       .then(data => {
-        console.log(data);
         if (this.state.allianceStation === 'Red Station 1') {
           this.setState(
             {
@@ -406,7 +409,16 @@ class MatchContent extends Component {
 
   handleStationChange = event => {
     this.setState({ allianceStation: event.target.value }, () => {
-      this.getTeamNumber();
+      if (this.state.allianceStation === 'Choose...') {
+        this.setState({ matchNum1: '' });
+        this.setState({ matchNum2: '' });
+        this.setState({ autoTeam: true });
+        this.setState({ teamNum: '' }, () => {
+          this.checkStage0();
+        });
+      } else {
+        this.getTeamNumber();
+      }
     });
   };
 
@@ -922,96 +934,6 @@ class MatchContent extends Component {
                       fontSize: '110%'
                     }}
                   >
-                    Match Number:
-                  </Form.Label>
-                </Form.Group>
-                <div style={{ marginLeft: '-6%' }}>
-                  <Dropdown
-                    style={{
-                      marginBottom: '10px',
-                      display: 'inline-block'
-                    }}
-                    focusFirstItemOnShow={false}
-                    onSelect={this.changeMatchType}
-                  >
-                    <Dropdown.Toggle
-                      style={{
-                        fontFamily: 'Helvetica, Arial',
-                        textAlign: 'center'
-                      }}
-                      size='xs'
-                      variant='success'
-                      id='dropdown-basic'
-                    >
-                      {this.state.matchTypeLabel}
-                    </Dropdown.Toggle>
-                    <Dropdown.Menu style={{ minWidth: '3%' }}>
-                      {matchTypes}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                  <Form.Control
-                    value={this.state.matchNum1}
-                    autoComplete='off'
-                    type='number'
-                    max={200}
-                    min={1}
-                    placeholder='Match Number'
-                    onChange={this.handleMatchNum1}
-                    isValid={
-                      this.state.validatedStage0 && this.state.matchNum1 !== ''
-                    }
-                    isInvalid={
-                      this.state.validatedStage0 && this.state.matchNum1 === ''
-                    }
-                    className='mb-1'
-                    style={{
-                      background: 'none',
-                      fontFamily: 'Helvetica, Arial',
-                      marginLeft: '2%',
-                      display: 'inline-block',
-                      width: this.state.matchTypeKey === 'qm' ? '50%' : '25%'
-                    }}
-                  />
-                  {this.state.matchTypeKey !== 'qm' ? (
-                    <React.Fragment>
-                      <span>-</span>
-                      <Form.Control
-                        value={this.state.matchNum2}
-                        autoComplete='off'
-                        type='number'
-                        max={200}
-                        min={1}
-                        placeholder='Match Number'
-                        onChange={this.handleMatchNum2}
-                        isValid={
-                          this.state.validatedStage0 &&
-                          this.state.matchTypeKey !== 'qm' &&
-                          this.state.matchNum2 !== ''
-                        }
-                        isInvalid={
-                          this.state.validatedStage0 &&
-                          this.state.matchTypeKey !== 'qm' &&
-                          this.state.matchNum2 === ''
-                        }
-                        className='mb-1'
-                        style={{
-                          background: 'none',
-                          fontFamily: 'Helvetica, Arial',
-                          display: 'inline-block',
-                          width: '25%'
-                        }}
-                      />
-                    </React.Fragment>
-                  ) : null}
-                </div>
-                <Form.Group style={{ width: '80%', marginLeft: '1%' }} as={Row}>
-                  <Form.Label
-                    className='mb-1'
-                    style={{
-                      fontFamily: 'Helvetica, Arial',
-                      fontSize: '110%'
-                    }}
-                  >
                     Alliance Station:
                   </Form.Label>
                 </Form.Group>
@@ -1026,6 +948,7 @@ class MatchContent extends Component {
                     onChange={this.handleStationChange}
                     value={this.state.allianceStation}
                   >
+                    <option>Choose...</option>
                     <option>Red Station 1</option>
                     <option>Red Station 2</option>
                     <option>Red Station 3</option>
@@ -1034,62 +957,176 @@ class MatchContent extends Component {
                     <option>Blue Station 3</option>
                   </Form.Control>
                 </Form.Group>
-                <Form.Group style={{ width: '80%', marginLeft: '1%' }} as={Row}>
-                  <Form.Label
-                    className='mb-1'
-                    style={{
-                      fontFamily: 'Helvetica, Arial',
-                      fontSize: '110%'
-                    }}
-                  >
-                    Team Number:
-                  </Form.Label>
-                </Form.Group>
-                <Form.Group style={{ width: '80%', marginLeft: '2%' }} as={Row}>
-                  <Form.Check
-                    checked={!this.state.autoTeam}
-                    onChange={this.handleModeSwitch}
-                    type='switch'
-                    label={this.state.autoTeam ? 'Automatic' : 'Manual'}
-                    id='switchMode'
-                    style={{ fontFamily: 'Helvetica, Arial', fontSize: '110%' }}
-                  />
-                </Form.Group>
-                <Form.Group style={{ width: '80%', marginLeft: '2%' }} as={Row}>
-                  {this.state.autoTeam ? (
-                    <Form.Label
-                      className='mb-1'
-                      style={{
-                        fontFamily: 'Helvetica, Arial',
-                        fontSize: '110%'
-                      }}
-                      onChange={this.checkStage0}
+                {this.state.allianceStation !== 'Choose...' ? (
+                  <React.Fragment>
+                    <Form.Group
+                      style={{ width: '80%', marginLeft: '1%' }}
+                      as={Row}
                     >
-                      {this.state.teamNum}
-                    </Form.Label>
-                  ) : (
-                    <Form.Control
-                      value={this.state.teamNum}
-                      autoComplete='off'
-                      type='number'
-                      max={9999}
-                      min={1}
-                      placeholder='Team Number'
-                      onChange={this.handleTeamNum}
-                      isValid={
-                        this.state.validatedStage0 && this.state.teamNum !== ''
-                      }
-                      isInvalid={
-                        this.state.validatedStage0 && this.state.teamNum === ''
-                      }
-                      className='mb-1'
-                      style={{
-                        background: 'none',
-                        fontFamily: 'Helvetica, Arial'
-                      }}
-                    />
-                  )}
-                </Form.Group>
+                      <Form.Label
+                        className='mb-1'
+                        style={{
+                          fontFamily: 'Helvetica, Arial',
+                          fontSize: '110%'
+                        }}
+                      >
+                        Match Number:
+                      </Form.Label>
+                    </Form.Group>
+                    <div style={{ marginLeft: '-6%' }}>
+                      <Dropdown
+                        style={{
+                          marginBottom: '10px',
+                          display: 'inline-block'
+                        }}
+                        focusFirstItemOnShow={false}
+                        onSelect={this.changeMatchType}
+                      >
+                        <Dropdown.Toggle
+                          style={{
+                            fontFamily: 'Helvetica, Arial',
+                            textAlign: 'center'
+                          }}
+                          size='xs'
+                          variant='success'
+                          id='dropdown-basic'
+                        >
+                          {this.state.matchTypeLabel}
+                        </Dropdown.Toggle>
+                        <Dropdown.Menu style={{ minWidth: '3%' }}>
+                          {matchTypes}
+                        </Dropdown.Menu>
+                      </Dropdown>
+                      <Form.Control
+                        value={this.state.matchNum1}
+                        autoComplete='off'
+                        type='number'
+                        max={200}
+                        min={1}
+                        placeholder='Match Number'
+                        onChange={this.handleMatchNum1}
+                        isValid={
+                          this.state.validatedStage0 &&
+                          this.state.matchNum1 !== ''
+                        }
+                        isInvalid={
+                          this.state.validatedStage0 &&
+                          this.state.matchNum1 === ''
+                        }
+                        className='mb-1'
+                        style={{
+                          background: 'none',
+                          fontFamily: 'Helvetica, Arial',
+                          marginLeft: '2%',
+                          display: 'inline-block',
+                          width:
+                            this.state.matchTypeKey === 'qm' ? '50%' : '25%'
+                        }}
+                      />
+                      {this.state.matchTypeKey !== 'qm' ? (
+                        <React.Fragment>
+                          <span>-</span>
+                          <Form.Control
+                            value={this.state.matchNum2}
+                            autoComplete='off'
+                            type='number'
+                            max={200}
+                            min={1}
+                            placeholder='Match Number'
+                            onChange={this.handleMatchNum2}
+                            isValid={
+                              this.state.validatedStage0 &&
+                              this.state.matchTypeKey !== 'qm' &&
+                              this.state.matchNum2 !== ''
+                            }
+                            isInvalid={
+                              this.state.validatedStage0 &&
+                              this.state.matchTypeKey !== 'qm' &&
+                              this.state.matchNum2 === ''
+                            }
+                            className='mb-1'
+                            style={{
+                              background: 'none',
+                              fontFamily: 'Helvetica, Arial',
+                              display: 'inline-block',
+                              width: '25%'
+                            }}
+                          />
+                        </React.Fragment>
+                      ) : null}
+                    </div>
+                    <Form.Group
+                      style={{ width: '80%', marginLeft: '1%' }}
+                      as={Row}
+                    >
+                      <Form.Label
+                        className='mb-1'
+                        style={{
+                          fontFamily: 'Helvetica, Arial',
+                          fontSize: '110%'
+                        }}
+                      >
+                        Team Number:
+                      </Form.Label>
+                    </Form.Group>
+                    <Form.Group
+                      style={{ width: '80%', marginLeft: '2%' }}
+                      as={Row}
+                    >
+                      <Form.Check
+                        checked={!this.state.autoTeam}
+                        onChange={this.handleModeSwitch}
+                        type='switch'
+                        label={this.state.autoTeam ? 'Automatic' : 'Manual'}
+                        id='switchMode'
+                        style={{
+                          fontFamily: 'Helvetica, Arial',
+                          fontSize: '110%'
+                        }}
+                      />
+                    </Form.Group>
+                    <Form.Group
+                      style={{ width: '80%', marginLeft: '2%' }}
+                      as={Row}
+                    >
+                      {this.state.autoTeam ? (
+                        <Form.Label
+                          className='mb-1'
+                          style={{
+                            fontFamily: 'Helvetica, Arial',
+                            fontSize: '110%'
+                          }}
+                          onChange={this.checkStage0}
+                        >
+                          {this.state.teamNum}
+                        </Form.Label>
+                      ) : (
+                        <Form.Control
+                          value={this.state.teamNum}
+                          autoComplete='off'
+                          type='number'
+                          max={9999}
+                          min={1}
+                          placeholder='Team Number'
+                          onChange={this.handleTeamNum}
+                          isValid={
+                            this.state.validatedStage0 &&
+                            this.state.teamNum !== ''
+                          }
+                          isInvalid={
+                            this.state.validatedStage0 &&
+                            this.state.teamNum === ''
+                          }
+                          className='mb-1'
+                          style={{
+                            background: 'none',
+                            fontFamily: 'Helvetica, Arial'
+                          }}
+                        />
+                      )}
+                    </Form.Group>
+                  </React.Fragment>
+                ) : null}
                 <Form.Check
                   onChange={this.handleFollowUp}
                   checked={this.state.markForFollowUp}
@@ -1243,7 +1280,6 @@ class MatchContent extends Component {
                   value={this.state.autoPowerCells}
                   onChange={this.handleSliderAutoCells}
                   type='range'
-                  id='autoPowerCellSlider'
                 />
               </div>
               <div className='div-form'>
@@ -2016,7 +2052,6 @@ class MatchContent extends Component {
                           value={this.state.levelPosition}
                           onChange={this.handleLevelChange}
                           type='range'
-                          id='autoPowerCellSlider'
                         />
                       </React.Fragment>
                     ) : null}

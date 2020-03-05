@@ -114,12 +114,12 @@ class App extends Component {
               <ProtectedRoute path='/' exact component={Home} />
               <ProtectedRoute path='/pits' exact component={PitNavigation} />
               <AdminRoute
-                path='/matches/:competition/:team/:matchNum/'
+                path='/matches/:competition/:team/:matchNum'
                 exact
                 component={MatchContent}
               />
               <ProtectedRoute
-                path='/matches/new'
+                path='/matches/:competition'
                 exact
                 component={MatchContent}
               />
@@ -130,6 +130,16 @@ class App extends Component {
               />
               <ProtectedRoute
                 path='/supers/:competition'
+                exact
+                component={SuperScoutContent}
+              />
+              <ProtectedRoute
+                path='/supers/:competition'
+                exact
+                component={SuperScoutContent}
+              />
+              <ProtectedRoute
+                path='/supers/:competition/:matchNum/:allianceColor(Red|Blue)?'
                 exact
                 component={SuperScoutContent}
               />

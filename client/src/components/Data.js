@@ -607,6 +607,7 @@ class Data extends Component {
             this.setState({
               retrieved: 'compInvalid'
             });
+            this.setState({ competition: 'Invalid' });
           } else {
             this.setState({
               competition: this.props.match.params.competition
@@ -636,6 +637,9 @@ class Data extends Component {
             this.setState({
               retrieved: 'compInvalid'
             });
+            this.setState({ competition: 'Invalid' });
+            this.setState({ teamNum: this.props.match.params.team });
+            this.setState({ teamDataType: this.props.match.params.dataType });
           } else {
             this.setState({ teamNum: this.props.match.params.team });
             this.setState({
@@ -721,6 +725,7 @@ class Data extends Component {
               this.setState({
                 retrieved: 'compInvalid'
               });
+              this.setState({ competition: 'Invalid' });
             } else {
               this.setState({
                 competition: this.props.match.params.competition
@@ -750,12 +755,14 @@ class Data extends Component {
               this.setState({
                 retrieved: 'compInvalid'
               });
+              this.setState({ competition: 'Invalid' });
+              this.setState({ teamNum: this.props.match.params.team });
+              this.setState({ teamDataType: this.props.match.params.dataType });
             } else {
               this.setState({ teamNum: this.props.match.params.team });
               this.setState({
                 competition: this.props.match.params.competition
               });
-              this.setState({ teamDataType: this.props.match.params.dataType });
               if (this.props.match.params.dataType === 'match') {
                 fetch(
                   `/api/competitions/${this.props.match.params.competition}/team/${this.props.match.params.team}/matchData`
@@ -833,6 +840,7 @@ class Data extends Component {
               this.setState({
                 retrieved: 'compInvalid'
               });
+              this.setState({ competition: 'Invalid' });
             } else {
               this.setState({
                 competition: this.props.match.params.competition
@@ -862,6 +870,7 @@ class Data extends Component {
               this.setState({
                 retrieved: 'compInvalid'
               });
+              this.setState({ competition: 'Invalid' });
             } else {
               this.setState({ teamNum: this.props.match.params.team });
               this.setState({
@@ -1583,6 +1592,128 @@ class Data extends Component {
 
     if (this.state.retrieved === '') {
       return null;
+    } else if (this.state.retrieved === 'compInvalid') {
+      return (
+        <div className='div-main' style={{ minHeight: this.state.heightSize }}>
+          <div className='justify-content-center'>
+            <img
+              alt='Logo'
+              src={Logo}
+              style={{
+                width: this.state.widthSize === '90%' ? '70%' : '30%',
+                marginTop: '20px',
+                marginLeft: '10px'
+              }}
+            />
+          </div>
+          <div style={{ width: this.state.widthSize }} className='div-second'>
+            <div className='div-form'>
+              <Form.Group
+                style={{
+                  width: '100%',
+                  margin: '0 auto',
+                  marginBottom: '10px'
+                }}
+                as={Row}
+              >
+                <Form.Label
+                  className='mb-1'
+                  style={{
+                    fontFamily: 'Helvetica, Arial',
+                    fontSize: '110%',
+                    margin: '0 auto'
+                  }}
+                >
+                  Competition:
+                </Form.Label>
+              </Form.Group>
+              <Dropdown
+                style={{
+                  marginBottom: '10px'
+                }}
+                focusFirstItemOnShow={false}
+                onSelect={this.getData}
+              >
+                <Dropdown.Toggle
+                  style={{
+                    fontFamily: 'Helvetica, Arial',
+                    textAlign: 'center'
+                  }}
+                  size='lg'
+                  variant='success'
+                  id='dropdown-basic'
+                >
+                  {this.state.competition}
+                </Dropdown.Toggle>
+                <Dropdown.Menu style={{ minWidth: '3%' }}>
+                  {competitionItems}
+                </Dropdown.Menu>
+              </Dropdown>
+              <Form.Control
+                value={this.state.teamNum}
+                autoComplete='off'
+                type='number'
+                max={9999}
+                min={1}
+                placeholder='Team Number'
+                onChange={this.handleTeamNum}
+                className='mb-1'
+                style={{
+                  background: 'none',
+                  fontFamily: 'Helvetica, Arial',
+                  display: 'inline-block',
+                  width: '50%'
+                }}
+                onKeyDown={this.checkKeyTeamGo}
+              />
+              <Button
+                variant='success'
+                type='btn'
+                style={{
+                  fontFamily: 'Helvetica, Arial',
+                  boxShadow: '-3px 3px black, -2px 2px black, -1px 1px black',
+                  border: '1px solid black',
+                  marginLeft: '4%',
+                  display: 'inline-block'
+                }}
+                onClick={this.handleTeamGo}
+                className='btn-xs'
+              >
+                Go
+              </Button>
+            </div>
+            <div>
+              <Button
+                size='xs'
+                onClick={this.changeToMatchData}
+                variant={
+                  this.state.teamDataType === 'match'
+                    ? 'success'
+                    : 'outline-success'
+                }
+                style={{ display: 'inline-block', marginRight: '2%' }}
+              >
+                Match Data
+              </Button>
+              <Button
+                size='xs'
+                onClick={this.changeToPitData}
+                variant={
+                  this.state.teamDataType === 'pit'
+                    ? 'success'
+                    : 'outline-success'
+                }
+                style={{ display: 'inline-block', marginLeft: '2%' }}
+              >
+                Pit Data
+              </Button>
+            </div>
+            <h1 className='pt-4'>
+              That competition is not available in our database
+            </h1>
+          </div>
+        </div>
+      );
     } else if (this.state.retrieved === 'teamMatchInvalid') {
       return (
         <div className='div-main' style={{ minHeight: this.state.heightSize }}>
@@ -2265,7 +2396,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Bottom Cells'
                         dataKey={'bottomAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'bottomAutoScore'}
@@ -2287,7 +2418,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Bottom Cells'
                         dataKey={'bottomTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'bottomTeleopScore'}
@@ -2310,7 +2441,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Outer Cells'
                         dataKey={'outerAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'outerAutoScore'}
@@ -2332,7 +2463,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Outer Cells'
                         dataKey={'outerTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'outerTeleopScore'}
@@ -2355,7 +2486,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Inner Cells'
                         dataKey={'innerAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'innerAutoScore'}
@@ -2377,7 +2508,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Inner Cells'
                         dataKey={'innerTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'innerTeleopScore'}
@@ -2404,7 +2535,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Bottom Cells'
                         dataKey={'bottomAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'bottomAutoScore'}
@@ -2426,7 +2557,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Bottom Cells'
                         dataKey={'bottomTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'bottomTeleopScore'}
@@ -2450,7 +2581,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Outer Cells'
                         dataKey={'outerAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'outerAutoScore'}
@@ -2472,7 +2603,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Outer Cells'
                         dataKey={'outerTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'outerTeleopScore'}
@@ -2496,7 +2627,7 @@ class Data extends Component {
                       <Bar
                         name='Auto - Inner Cells'
                         dataKey={'innerAutoScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'innerAutoScore'}
@@ -2518,7 +2649,7 @@ class Data extends Component {
                       <Bar
                         name='Teleop - Inner Cells'
                         dataKey={'innerTeleopScore'}
-                        fill='#8884d8'
+                        fill='#28a745'
                       >
                         <LabelList
                           dataKey={'innerTeleopScore'}

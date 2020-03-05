@@ -101,7 +101,78 @@ class MatchReportList extends Component {
         filterValue: (cell, row) => row.reportstatus
       }
     ],
-    matches: []
+    superColumns: [
+      { dataField: 'matchid', text: 'Match ID', hidden: true },
+      {
+        headerStyle: {
+          width: '20%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'teamnum',
+        text: 'Team',
+        filter: textFilter({
+          autoComplete: 'off',
+          type: 'number',
+          className: 'customtextbar'
+        })
+      },
+      {
+        headerStyle: {
+          width: '25%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'alteredMatchNum',
+        text: 'Match',
+        filter: textFilter({
+          className: 'customtextbar'
+        })
+      },
+      {
+        headerStyle: {
+          width: '25%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'scout_name_super',
+        text: 'Scouter',
+        filter: textFilter({
+          className: 'customtextbar',
+          autoComplete: 'off'
+        })
+      },
+      {
+        headerStyle: {
+          width: '20%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'report_status_super',
+        text: 'Status',
+        formatter: cell => statusSelectOptions[cell],
+        filter: selectFilter({
+          options: statusSelectOptions
+        }),
+        hidden: true
+      },
+      {
+        headerStyle: {
+          width: '25%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'buttonValue',
+        text: 'Scout',
+        filter: selectFilter({
+          options: statusSelectOptions
+        }),
+        filterValue: (cell, row) => row.report_status_super
+      }
+    ],
+    matches: [],
+    superMatches: [],
+    matchType: 'normal'
   };
 
   getMatchReportListForCompetition = competition => {
@@ -109,7 +180,19 @@ class MatchReportList extends Component {
     fetch(`/api/competitions/${competition}/matches`)
       .then(response => response.json())
       .then(data => {
-        let matchList = data.matchList;
+        let preFilterMatchList = data.matchList;
+        let preFilterSuperList = data.matchList;
+        let matchList = preFilterMatchList.filter(team => {
+          return (
+            team.reportstatus === 'Follow Up' || team.reportstatus === 'Done'
+          );
+        });
+        let superList = preFilterSuperList.filter(team => {
+          return (
+            team.report_status_super === 'Follow Up' ||
+            team.report_status_super === 'Done'
+          );
+        });
         matchList.sort((a, b) => {
           if (a.matchnum.split('_')[0] === 'qm') {
             if (b.matchnum.split('_')[0] === 'qm') {
@@ -201,7 +284,7 @@ class MatchReportList extends Component {
           }
           row.buttonValue = (
             <Link
-              to={`matches/${this.state.competition}/${row.teamnum}/${row.matchnum}`}
+              to={`matches/${row.short_name}/${row.teamnum}/${row.matchnum}`}
             >
               <Button
                 variant='success'
@@ -217,6 +300,113 @@ class MatchReportList extends Component {
           );
         });
         this.setState({ matches: matchList });
+        superList.sort((a, b) => {
+          if (a.matchnum.split('_')[0] === 'qm') {
+            if (b.matchnum.split('_')[0] === 'qm') {
+              return a.matchnum.split('_')[1] - b.matchnum.split('_')[1];
+            } else {
+              return -1;
+            }
+          } else if (a.matchnum.split('_')[0] === 'qf') {
+            if (b.matchnum.split('_')[0] === 'qf') {
+              return (
+                a.matchnum.split('_')[1] +
+                a.matchnum.split('_')[2] -
+                (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+              );
+            } else {
+              if (b.matchnum.split('_')[0] === 'qm') {
+                return 1;
+              } else {
+                return -1;
+              }
+            }
+          } else if (a.matchnum.split('_')[0] === 'sf') {
+            if (b.matchnum.split('_')[0] === 'sf') {
+              return (
+                a.matchnum.split('_')[1] +
+                a.matchnum.split('_')[2] -
+                (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+              );
+            } else {
+              if (
+                b.matchnum.split('_')[0] === 'qm' ||
+                b.matchnum.split('_')[0] === 'qf'
+              ) {
+                return 1;
+              } else {
+                return -1;
+              }
+            }
+          } else if (a.matchnum.split('_')[0] === 'f') {
+            if (b.matchnum.split('_')[0] === 'f') {
+              return (
+                a.matchnum.split('_')[1] +
+                a.matchnum.split('_')[2] -
+                (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+              );
+            } else {
+              if (
+                b.matchnum.split('_')[0] === 'qm' ||
+                b.matchnum.split('_')[0] === 'qf' ||
+                b.matchnum.split('_')[0] === 'sf'
+              ) {
+                return 1;
+              } else {
+                return -1;
+              }
+            }
+          }
+        });
+        superList.sort((a, b) => a.teamnum - b.teamnum);
+        superList.map(row => {
+          let buttonLabel;
+          let newMatchNum;
+          if (row.matchnum.split('_')[0] === 'qm') {
+            newMatchNum = 'Qual ' + row.matchnum.split('_')[1];
+          } else if (row.matchnum.split('_')[0] === 'qf') {
+            newMatchNum =
+              'Quarter-Final ' +
+              row.matchnum.split('_')[1] +
+              '-' +
+              row.matchnum.split('_')[2];
+          } else if (row.matchnum.split('_')[0] === 'sf') {
+            newMatchNum =
+              'Semi-Final ' +
+              row.matchnum.split('_')[1] +
+              '-' +
+              row.matchnum.split('_')[2];
+          } else if (row.matchnum.split('_')[0] === 'f') {
+            newMatchNum =
+              'Final ' +
+              row.matchnum.split('_')[1] +
+              '-' +
+              row.matchnum.split('_')[2];
+          }
+          row.alteredMatchNum = newMatchNum;
+          if (row.report_status_super === 'Follow Up') {
+            buttonLabel = 'Fix';
+          } else if (row.report_status_super === 'Done') {
+            buttonLabel = 'Edit';
+          }
+          row.buttonValue = (
+            <Link
+              to={`supers/${row.short_name}/${row.matchnum}/${row.alliance_color}`}
+            >
+              <Button
+                variant='success'
+                style={{
+                  fontSize: '100%',
+                  boxShadow: '-3px 3px black, -2px 2px black, -1px 1px black',
+                  border: '1px solid black'
+                }}
+              >
+                {buttonLabel}
+              </Button>
+            </Link>
+          );
+        });
+        this.setState({ superMatches: superList });
       })
       .catch(error => {
         console.error('Error:', error);
@@ -239,7 +429,20 @@ class MatchReportList extends Component {
         fetch(`/api/competitions/${this.state.competition}/matches`)
           .then(response => response.json())
           .then(data => {
-            let matchList = data.matchList;
+            let preFilterMatchList = data.matchList;
+            let preFilterSuperList = data.matchList;
+            let matchList = preFilterMatchList.filter(team => {
+              return (
+                team.reportstatus === 'Follow Up' ||
+                team.reportstatus === 'Done'
+              );
+            });
+            let superList = preFilterSuperList.filter(team => {
+              return (
+                team.report_status_super === 'Follow Up' ||
+                team.report_status_super === 'Done'
+              );
+            });
             matchList.sort((a, b) => {
               if (a.matchnum.split('_')[0] === 'qm') {
                 if (b.matchnum.split('_')[0] === 'qm') {
@@ -331,7 +534,7 @@ class MatchReportList extends Component {
               }
               row.buttonValue = (
                 <Link
-                  to={`matches/${this.state.competition}/${row.teamnum}/${row.matchnum}`}
+                  to={`matches/${row.short_name}/${row.teamnum}/${row.matchnum}`}
                 >
                   <Button
                     variant='success'
@@ -348,6 +551,114 @@ class MatchReportList extends Component {
               );
             });
             this.setState({ matches: matchList });
+            superList.sort((a, b) => {
+              if (a.matchnum.split('_')[0] === 'qm') {
+                if (b.matchnum.split('_')[0] === 'qm') {
+                  return a.matchnum.split('_')[1] - b.matchnum.split('_')[1];
+                } else {
+                  return -1;
+                }
+              } else if (a.matchnum.split('_')[0] === 'qf') {
+                if (b.matchnum.split('_')[0] === 'qf') {
+                  return (
+                    a.matchnum.split('_')[1] +
+                    a.matchnum.split('_')[2] -
+                    (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+                  );
+                } else {
+                  if (b.matchnum.split('_')[0] === 'qm') {
+                    return 1;
+                  } else {
+                    return -1;
+                  }
+                }
+              } else if (a.matchnum.split('_')[0] === 'sf') {
+                if (b.matchnum.split('_')[0] === 'sf') {
+                  return (
+                    a.matchnum.split('_')[1] +
+                    a.matchnum.split('_')[2] -
+                    (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+                  );
+                } else {
+                  if (
+                    b.matchnum.split('_')[0] === 'qm' ||
+                    b.matchnum.split('_')[0] === 'qf'
+                  ) {
+                    return 1;
+                  } else {
+                    return -1;
+                  }
+                }
+              } else if (a.matchnum.split('_')[0] === 'f') {
+                if (b.matchnum.split('_')[0] === 'f') {
+                  return (
+                    a.matchnum.split('_')[1] +
+                    a.matchnum.split('_')[2] -
+                    (b.matchnum.split('_')[1] + b.matchnum.split('_')[2])
+                  );
+                } else {
+                  if (
+                    b.matchnum.split('_')[0] === 'qm' ||
+                    b.matchnum.split('_')[0] === 'qf' ||
+                    b.matchnum.split('_')[0] === 'sf'
+                  ) {
+                    return 1;
+                  } else {
+                    return -1;
+                  }
+                }
+              }
+            });
+            superList.sort((a, b) => a.teamnum - b.teamnum);
+            superList.map(row => {
+              let buttonLabel;
+              let newMatchNum;
+              if (row.matchnum.split('_')[0] === 'qm') {
+                newMatchNum = 'Qual ' + row.matchnum.split('_')[1];
+              } else if (row.matchnum.split('_')[0] === 'qf') {
+                newMatchNum =
+                  'Quarter-Final ' +
+                  row.matchnum.split('_')[1] +
+                  '-' +
+                  row.matchnum.split('_')[2];
+              } else if (row.matchnum.split('_')[0] === 'sf') {
+                newMatchNum =
+                  'Semi-Final ' +
+                  row.matchnum.split('_')[1] +
+                  '-' +
+                  row.matchnum.split('_')[2];
+              } else if (row.matchnum.split('_')[0] === 'f') {
+                newMatchNum =
+                  'Final ' +
+                  row.matchnum.split('_')[1] +
+                  '-' +
+                  row.matchnum.split('_')[2];
+              }
+              row.alteredMatchNum = newMatchNum;
+              if (row.report_status_super === 'Follow Up') {
+                buttonLabel = 'Fix';
+              } else if (row.report_status_super === 'Done') {
+                buttonLabel = 'Edit';
+              }
+              row.buttonValue = (
+                <Link
+                  to={`supers/${row.short_name}/${row.matchnum}/${row.alliance_color}`}
+                >
+                  <Button
+                    variant='success'
+                    style={{
+                      fontSize: '100%',
+                      boxShadow:
+                        '-3px 3px black, -2px 2px black, -1px 1px black',
+                      border: '1px solid black'
+                    }}
+                  >
+                    {buttonLabel}
+                  </Button>
+                </Link>
+              );
+            });
+            this.setState({ superMatches: superList });
           })
           .catch(error => {
             console.error('Error:', error);
@@ -358,6 +669,14 @@ class MatchReportList extends Component {
     });
     this.setState({ heightSize: window.innerHeight + 'px' });
   }
+
+  changeToNormal = () => {
+    this.setState({ matchType: 'normal' });
+  };
+
+  changeToSuper = () => {
+    this.setState({ matchType: 'super' });
+  };
 
   render() {
     const competitionItems = this.state.competitions.map(competition => (
@@ -441,50 +760,94 @@ class MatchReportList extends Component {
               </Button>
             </div>
             {this.context.isLoggedIn === true && (
-              <Link to={'matches/new'}>
-                <Button
-                  variant='success'
-                  type='btn'
-                  className='btn-xs mt-2'
-                  style={{
-                    fontFamily: 'Helvetica, Arial',
-                    boxShadow: '-3px 3px black, -2px 2px black, -1px 1px black',
-                    border: '1px solid black'
-                  }}
-                >
-                  Scout New Match
-                </Button>
-              </Link>
+              <div>
+                <Link to={'matches/' + this.state.competition}>
+                  <Button
+                    variant='success'
+                    type='btn'
+                    className='btn-xs mt-2'
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      boxShadow:
+                        '-3px 3px black, -2px 2px black, -1px 1px black',
+                      border: '1px solid black'
+                    }}
+                  >
+                    Scout New Match
+                  </Button>
+                </Link>
+              </div>
             )}
             {this.context.isLoggedIn === true && (
-              <Link to={'supers/' + this.state.competition}>
-                <Button
-                  variant='success'
-                  type='btn'
-                  className='btn-xs mt-2'
-                  style={{
-                    fontFamily: 'Helvetica, Arial',
-                    boxShadow: '-3px 3px black, -2px 2px black, -1px 1px black',
-                    border: '1px solid black'
-                  }}
-                >
-                  Super Scout
-                </Button>
-              </Link>
+              <div>
+                <Link to={'supers/' + this.state.competition}>
+                  <Button
+                    variant='success'
+                    type='btn'
+                    className='btn-xs mt-2'
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      boxShadow:
+                        '-3px 3px black, -2px 2px black, -1px 1px black',
+                      border: '1px solid black'
+                    }}
+                  >
+                    Super Scout
+                  </Button>
+                </Link>
+              </div>
             )}
           </div>
+          <div style={{ marginBottom: '15px' }}>
+            <Button
+              size='xs'
+              onClick={this.changeToNormal}
+              variant={
+                this.state.matchType === 'normal'
+                  ? 'success'
+                  : 'outline-success'
+              }
+              style={{ display: 'inline-block', marginRight: '2%' }}
+            >
+              Match Form
+            </Button>
+            <Button
+              size='xs'
+              onClick={this.changeToSuper}
+              variant={
+                this.state.matchType === 'super' ? 'success' : 'outline-success'
+              }
+              style={{ display: 'inline-block', marginLeft: '2%' }}
+            >
+              Super Form
+            </Button>
+          </div>
         </div>
-        <BootstrapTable
-          striped
-          hover
-          keyField='matchid'
-          //rowStyle={this.state.style}
-          bordered
-          bootstrap4
-          data={this.state.matches}
-          columns={this.state.columns}
-          filter={filterFactory()}
-        />
+        {this.state.matchType === 'normal' ? (
+          <BootstrapTable
+            striped
+            hover
+            keyField='matchid'
+            //rowStyle={this.state.style}
+            bordered
+            bootstrap4
+            data={this.state.matches}
+            columns={this.state.columns}
+            filter={filterFactory()}
+          />
+        ) : (
+          <BootstrapTable
+            striped
+            hover
+            keyField='matchid'
+            //rowStyle={this.state.style}
+            bordered
+            bootstrap4
+            data={this.state.superMatches}
+            columns={this.state.superColumns}
+            filter={filterFactory()}
+          />
+        )}
       </div>
     );
   }

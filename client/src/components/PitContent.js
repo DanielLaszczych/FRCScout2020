@@ -101,7 +101,6 @@ class PitContent extends Component {
         } else {
           this.setState({ retrieved: 'valid' });
           const existingData = data.pitFormData[0];
-          console.log(existingData.abilities);
           this.setState({
             group:
               existingData.group_name === null
