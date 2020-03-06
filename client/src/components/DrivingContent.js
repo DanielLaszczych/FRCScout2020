@@ -9,7 +9,7 @@ import { ReactSortable, Sortable, MultiDrag, Swap } from 'react-sortablejs';
 
 Sortable.mount(new Swap());
 
-class SuperScoutContent extends Component {
+class DrivingContent extends Component {
   static contextType = AuthContext;
 
   state = {
@@ -24,13 +24,11 @@ class SuperScoutContent extends Component {
     scout: this.context.user.username,
     matchNum: '',
     allianceColor: '',
-    dataType: 'driving',
     teams: [],
     allianceColorOptions: [
       { id: 1, label: 'Red' },
       { id: 2, label: 'Blue' }
     ],
-    categoryTitles: ['Speed', 'Agility', 'Counter Defense'],
     matchTypes: [
       { id: 1, name: 'Quals', key: 'qm' },
       { id: 2, name: 'Quarters', key: 'qf' },
@@ -68,9 +66,6 @@ class SuperScoutContent extends Component {
     counterListTier1: [],
     counterListTier2: [],
     counterListTier3: [],
-    dockDefense: [0, 0, 0],
-    knockDefense: [0, 0, 0],
-    blockDefense: [0, 0, 0],
     superComments1: '',
     superComments2: '',
     superComments3: ''
@@ -80,7 +75,7 @@ class SuperScoutContent extends Component {
     window.onbeforeunload = function() {
       return '';
     };
-    if (this.props.match.path === '/supers/:competition') {
+    if (this.props.match.path === '/supers/driving/:competition') {
       fetch('/competitions')
         .then(response => response.json())
         .then(data => {
@@ -95,11 +90,14 @@ class SuperScoutContent extends Component {
         });
     } else {
       fetch(
-        `/api/competitions/${this.props.match.params.competition}/matchNum/${this.props.match.params.matchNum}/allianceColor/${this.props.match.params.allianceColor}/matchData`
+        `/api/competitions/${this.props.match.params.competition}/matchNum/${this.props.match.params.matchNum}/allianceColor/${this.props.match.params.allianceColor}/drivingData`
       )
         .then(response => response.json())
         .then(data => {
-          if (data.matchData.length !== 3) {
+          if (
+            data.matchData.length !== 3 &&
+            data.matchData[0].report_status_super_driving !== 'NOT STARTED'
+          ) {
             this.setState({ retrieved: 'invalid' });
           } else {
             let newSpeedListTier0 = [];
@@ -117,12 +115,18 @@ class SuperScoutContent extends Component {
             this.setState({ allianceColor: data.matchData[0].alliance_color });
             this.setState({
               markForFollowUp:
-                data.matchData[0].report_status_super === 'Done' ? false : true
+                data.matchData[0].report_status_super_driving === 'Done'
+                  ? false
+                  : true
             });
-            this.setState({ scout: data.matchData[0].scout_name_super });
+            this.setState({
+              scout: data.matchData[0].scout_name_super_driving
+            });
             this.setState({ competition: data.matchData[0].short_name });
             this.setState({ competitionKey: data.matchData[0].blue_key });
-            this.setState({ autoTeam: data.matchData[0].auto_team_super });
+            this.setState({
+              autoTeam: data.matchData[0].auto_team_super_driving
+            });
             let matchNum = data.matchData[0].match_num.split('_');
             if (matchNum[0] === 'qm') {
               this.setState({ matchTypeKey: 'qm' });
@@ -145,27 +149,17 @@ class SuperScoutContent extends Component {
               this.setState({ matchNum2: matchNum[2] });
             }
             data.matchData.forEach(team => {
-              let obj = { id: team.team_order, teamNum: team.team_num };
+              let obj = { id: team.team_order_driving, teamNum: team.team_num };
 
-              let newDockDefense = this.state.dockDefense;
-              let newKnockDefense = this.state.knockDefense;
-              let newBlockDefense = this.state.blockDefense;
-              newDockDefense[team.team_order] = team.dock_defense;
-              newKnockDefense[team.team_order] = team.knock_defense;
-              newBlockDefense[team.team_order] = team.block_defense;
-              this.setState({ dockDefense: newDockDefense });
-              this.setState({ knockDefense: newKnockDefense });
-              this.setState({ blockDefense: newBlockDefense });
-
-              if (team.team_order === 0) {
+              if (team.team_order_driving === 0) {
                 this.setState({ teamNum1: team.team_num });
-                this.setState({ superComments1: team.super_comments });
-              } else if (team.team_order === 1) {
+                this.setState({ superComments1: team.super_comments_driving });
+              } else if (team.team_order_driving === 1) {
                 this.setState({ teamNum2: team.team_num });
-                this.setState({ superComments2: team.super_comments });
+                this.setState({ superComments2: team.super_comments_driving });
               } else {
                 this.setState({ teamNum3: team.team_num });
-                this.setState({ superComments3: team.super_comments });
+                this.setState({ superComments3: team.super_comments_driving });
               }
 
               if (team.speed === 0) {
@@ -623,18 +617,6 @@ class SuperScoutContent extends Component {
     });
   };
 
-  changeToDriving = () => {
-    if (this.state.dataType === 'defense') {
-      this.setState({ dataType: 'driving' });
-    }
-  };
-
-  changeToDefense = () => {
-    if (this.state.dataType === 'driving') {
-      this.setState({ dataType: 'defense' });
-    }
-  };
-
   handleFollowUp = () => {
     this.setState({ markForFollowUp: !this.state.markForFollowUp });
   };
@@ -789,9 +771,6 @@ class SuperScoutContent extends Component {
         speed: this.getSpeedTier(this.state.teamNum1),
         agility: this.getAgilityTier(this.state.teamNum1),
         counterDefense: this.getCounterTier(this.state.teamNum1),
-        dockDefense: this.state.dockDefense[0],
-        knockDefense: this.state.knockDefense[0],
-        blockDefense: this.state.blockDefense[0],
         superComments: this.state.superComments1
       };
 
@@ -814,9 +793,6 @@ class SuperScoutContent extends Component {
         speed: this.getSpeedTier(this.state.teamNum2),
         agility: this.getAgilityTier(this.state.teamNum2),
         counterDefense: this.getCounterTier(this.state.teamNum2),
-        dockDefense: this.state.dockDefense[1],
-        knockDefense: this.state.knockDefense[1],
-        blockDefense: this.state.blockDefense[1],
         superComments: this.state.superComments2
       };
 
@@ -839,13 +815,10 @@ class SuperScoutContent extends Component {
         speed: this.getSpeedTier(this.state.teamNum3),
         agility: this.getAgilityTier(this.state.teamNum3),
         counterDefense: this.getCounterTier(this.state.teamNum3),
-        dockDefense: this.state.dockDefense[2],
-        knockDefense: this.state.knockDefense[2],
-        blockDefense: this.state.blockDefense[2],
         superComments: this.state.superComments3
       };
 
-      fetch('/api/submitSuperForm', {
+      fetch('/api/submitDrivingForm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -856,7 +829,7 @@ class SuperScoutContent extends Component {
         .then(data => {
           if (data.message === 'Submitted') {
             valid.push(true);
-            if (valid[0] && valid[1]) {
+            if (valid[0] && valid[1] && valid[2]) {
               this.setState({ submitting: true });
               this.props.history.push('/matches');
             }
@@ -868,7 +841,7 @@ class SuperScoutContent extends Component {
           console.error('Error', error);
         });
 
-      fetch('/api/submitSuperForm', {
+      fetch('/api/submitDrivingForm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -879,7 +852,7 @@ class SuperScoutContent extends Component {
         .then(data => {
           if (data.message === 'Submitted') {
             valid.push(true);
-            if (valid[0] && valid[1]) {
+            if (valid[0] && valid[1] && valid[2]) {
               this.setState({ submitting: true });
               this.props.history.push('/matches');
             }
@@ -891,7 +864,7 @@ class SuperScoutContent extends Component {
           console.error('Error', error);
         });
 
-      fetch('/api/submitSuperForm', {
+      fetch('/api/submitDrivingForm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -902,7 +875,7 @@ class SuperScoutContent extends Component {
         .then(data => {
           if (data.message === 'Submitted') {
             valid.push(true);
-            if (valid[0] && valid[1]) {
+            if (valid[0] && valid[1] && valid[2]) {
               this.setState({ submitting: true });
               this.props.history.push('/matches');
             }
@@ -1175,753 +1148,383 @@ class SuperScoutContent extends Component {
             this.state.teamNum2 !== '' &&
             this.state.teamNum3 !== '' ? (
               <React.Fragment>
-                <div style={{ marginBottom: '15px' }}>
-                  <Button
-                    size='xs'
-                    onClick={this.changeToDriving}
-                    variant={
-                      this.state.dataType === 'driving'
-                        ? 'success'
-                        : 'outline-success'
-                    }
-                    style={{ display: 'inline-block', marginRight: '2%' }}
+                <div className='div-form'>
+                  <div
+                    style={{
+                      textAlign: 'start',
+                      fontFamily: 'Helvetica, Arial',
+                      fontSize: '110%'
+                    }}
                   >
-                    Driving
-                  </Button>
-                  <Button
-                    size='xs'
-                    onClick={this.changeToDefense}
-                    variant={
-                      this.state.dataType === 'defense'
-                        ? 'success'
-                        : 'outline-success'
-                    }
-                    style={{ display: 'inline-block', marginLeft: '2%' }}
+                    Speed:
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
                   >
-                    Defense
-                  </Button>
+                    Tier 3:
+                    {this.state.speedListTier3.length > 1
+                      ? ' Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.speedListTier3.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='speedList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.speedListTier3}
+                    setList={newState =>
+                      this.setState({ speedListTier3: newState })
+                    }
+                  >
+                    {this.state.speedListTier3.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
+                      </div>
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 2:
+                    {this.state.speedListTier2.length > 1
+                      ? ' Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.speedListTier2.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='speedList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.speedListTier2}
+                    setList={newState =>
+                      this.setState({ speedListTier2: newState })
+                    }
+                  >
+                    {this.state.speedListTier2.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
+                      </div>
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 1:
+                  </div>
+                  <ReactSortable
+                    group='speedList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.speedListTier1}
+                    setList={newState =>
+                      this.setState({ speedListTier1: newState })
+                    }
+                  >
+                    {this.state.speedListTier1.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
+                      </div>
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 0:
+                  </div>
+                  <ReactSortable
+                    group='speedList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.speedListTier0}
+                    setList={newState =>
+                      this.setState({ speedListTier0: newState })
+                    }
+                  >
+                    {this.state.speedListTier0.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
+                      </div>
+                    ))}
+                  </ReactSortable>
                 </div>
-                {this.state.dataType === 'driving' ? (
-                  <React.Fragment>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%'
-                        }}
-                      >
-                        Speed:
+                <div className='div-form'>
+                  <div
+                    style={{
+                      textAlign: 'start',
+                      fontFamily: 'Helvetica, Arial',
+                      fontSize: '110%'
+                    }}
+                  >
+                    Agility:
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 3:
+                    {this.state.agilityListTier3.length > 1
+                      ? 'Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.agilityListTier3.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='agilityList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.agilityListTier3}
+                    setList={newState =>
+                      this.setState({ agilityListTier3: newState })
+                    }
+                  >
+                    {this.state.agilityListTier3.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 3:
-                        {this.state.speedListTier3.length > 1
-                          ? ' Only one team'
-                          : ''}
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 2:{' '}
+                    {this.state.agilityListTier2.length > 1
+                      ? 'Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.agilityListTier2.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='agilityList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.agilityListTier2}
+                    setList={newState =>
+                      this.setState({ agilityListTier2: newState })
+                    }
+                  >
+                    {this.state.agilityListTier2.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.speedListTier3.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='speedList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.speedListTier3}
-                        setList={newState =>
-                          this.setState({ speedListTier3: newState })
-                        }
-                      >
-                        {this.state.speedListTier3.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 2:
-                        {this.state.speedListTier2.length > 1
-                          ? ' Only one team'
-                          : ''}
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 1:
+                  </div>
+                  <ReactSortable
+                    group='agilityList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.agilityListTier1}
+                    setList={newState =>
+                      this.setState({ agilityListTier1: newState })
+                    }
+                  >
+                    {this.state.agilityListTier1.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.speedListTier2.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='speedList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.speedListTier2}
-                        setList={newState =>
-                          this.setState({ speedListTier2: newState })
-                        }
-                      >
-                        {this.state.speedListTier2.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 1:
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 0:
+                  </div>
+                  <ReactSortable
+                    group='agilityList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.agilityListTier0}
+                    setList={newState =>
+                      this.setState({ agilityListTier0: newState })
+                    }
+                  >
+                    {this.state.agilityListTier0.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        group='speedList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.speedListTier1}
-                        setList={newState =>
-                          this.setState({ speedListTier1: newState })
-                        }
-                      >
-                        {this.state.speedListTier1.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 0:
+                    ))}
+                  </ReactSortable>
+                </div>
+                <div className='div-form'>
+                  <div
+                    style={{
+                      textAlign: 'start',
+                      fontFamily: 'Helvetica, Arial',
+                      fontSize: '110%'
+                    }}
+                  >
+                    Counter:
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 3:
+                    {this.state.counterListTier3.length > 1
+                      ? 'Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.counterListTier3.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='counterList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.counterListTier3}
+                    setList={newState =>
+                      this.setState({ counterListTier3: newState })
+                    }
+                  >
+                    {this.state.counterListTier3.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        group='speedList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.speedListTier0}
-                        setList={newState =>
-                          this.setState({ speedListTier0: newState })
-                        }
-                      >
-                        {this.state.speedListTier0.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                    </div>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%'
-                        }}
-                      >
-                        Agility:
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 2:{' '}
+                    {this.state.counterListTier2.length > 1
+                      ? 'Only one team'
+                      : ''}
+                  </div>
+                  <ReactSortable
+                    style={{
+                      background:
+                        this.state.counterListTier2.length > 1
+                          ? '#ff8080'
+                          : '#90ee90'
+                    }}
+                    group='counterList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.counterListTier2}
+                    setList={newState =>
+                      this.setState({ counterListTier2: newState })
+                    }
+                  >
+                    {this.state.counterListTier2.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 3:
-                        {this.state.agilityListTier3.length > 1
-                          ? 'Only one team'
-                          : ''}
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 1:
+                  </div>
+                  <ReactSortable
+                    group='counterList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.counterListTier1}
+                    setList={newState =>
+                      this.setState({ counterListTier1: newState })
+                    }
+                  >
+                    {this.state.counterListTier1.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.agilityListTier3.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='agilityList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.agilityListTier3}
-                        setList={newState =>
-                          this.setState({ agilityListTier3: newState })
-                        }
-                      >
-                        {this.state.agilityListTier3.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 2:{' '}
-                        {this.state.agilityListTier2.length > 1
-                          ? 'Only one team'
-                          : ''}
+                    ))}
+                  </ReactSortable>
+                  <div
+                    style={{
+                      fontFamily: 'Helvetica, Arial'
+                    }}
+                  >
+                    Tier 0:
+                  </div>
+                  <ReactSortable
+                    group='counterList'
+                    className='pick-list'
+                    animation={150}
+                    list={this.state.counterListTier0}
+                    setList={newState =>
+                      this.setState({ counterListTier0: newState })
+                    }
+                  >
+                    {this.state.counterListTier0.map(team => (
+                      <div className='pick-item' key={team.id}>
+                        {team.teamNum}
                       </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.agilityListTier2.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='agilityList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.agilityListTier2}
-                        setList={newState =>
-                          this.setState({ agilityListTier2: newState })
-                        }
-                      >
-                        {this.state.agilityListTier2.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 1:
-                      </div>
-                      <ReactSortable
-                        group='agilityList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.agilityListTier1}
-                        setList={newState =>
-                          this.setState({ agilityListTier1: newState })
-                        }
-                      >
-                        {this.state.agilityListTier1.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 0:
-                      </div>
-                      <ReactSortable
-                        group='agilityList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.agilityListTier0}
-                        setList={newState =>
-                          this.setState({ agilityListTier0: newState })
-                        }
-                      >
-                        {this.state.agilityListTier0.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                    </div>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%'
-                        }}
-                      >
-                        Counter:
-                      </div>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 3:
-                        {this.state.counterListTier3.length > 1
-                          ? 'Only one team'
-                          : ''}
-                      </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.counterListTier3.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='counterList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.counterListTier3}
-                        setList={newState =>
-                          this.setState({ counterListTier3: newState })
-                        }
-                      >
-                        {this.state.counterListTier3.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 2:{' '}
-                        {this.state.counterListTier2.length > 1
-                          ? 'Only one team'
-                          : ''}
-                      </div>
-                      <ReactSortable
-                        style={{
-                          background:
-                            this.state.counterListTier2.length > 1
-                              ? '#ff8080'
-                              : '#90ee90'
-                        }}
-                        group='counterList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.counterListTier2}
-                        setList={newState =>
-                          this.setState({ counterListTier2: newState })
-                        }
-                      >
-                        {this.state.counterListTier2.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 1:
-                      </div>
-                      <ReactSortable
-                        group='counterList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.counterListTier1}
-                        setList={newState =>
-                          this.setState({ counterListTier1: newState })
-                        }
-                      >
-                        {this.state.counterListTier1.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                      <div
-                        style={{
-                          fontFamily: 'Helvetica, Arial'
-                        }}
-                      >
-                        Tier 0:
-                      </div>
-                      <ReactSortable
-                        group='counterList'
-                        className='pick-list'
-                        animation={150}
-                        list={this.state.counterListTier0}
-                        setList={newState =>
-                          this.setState({ counterListTier0: newState })
-                        }
-                      >
-                        {this.state.counterListTier0.map(team => (
-                          <div className='pick-item' key={team.id}>
-                            {team.teamNum}
-                          </div>
-                        ))}
-                      </ReactSortable>
-                    </div>
-                    <Form.Check
-                      onChange={this.handleFollowUp}
-                      checked={this.state.markForFollowUp}
-                      custom
-                      style={{
-                        fontSize: '100%',
-                        fontFamily: 'Helvetica, Arial'
-                      }}
-                      type='checkbox'
-                      label='Mark for follow up'
-                      id='followUp'
-                    />
-                    <Button
-                      variant='success'
-                      type='btn'
-                      style={{
-                        fontFamily: 'Helvetica, Arial',
-                        boxShadow:
-                          '-3px 3px black, -2px 2px black, -1px 1px black',
-                        border: '1px solid black',
-                        marginTop: '10px'
-                      }}
-                      onClick={this.handleSubmit}
-                      className='btn-lg'
-                    >
-                      Submit
-                    </Button>
-                  </React.Fragment>
-                ) : (
-                  <React.Fragment>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%',
-                          marginBottom: '10px'
-                        }}
-                      >
-                        Team: {this.state.teamNum1}
-                      </div>
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Docking: {this.state.dockDefense[0]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.dockDefense[0]}
-                        onChange={event => this.handleDockDefense(event, 0)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Knocking: {this.state.knockDefense[0]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.knockDefense[0]}
-                        onChange={event => this.handleKnockDefense(event, 0)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center  ',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Blocking: {this.state.blockDefense[0]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.blockDefense[0]}
-                        onChange={event => this.handleBlockDefense(event, 0)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          display: 'inline-block',
-                          width: '80%',
-                          marginTop: '10px'
-                        }}
-                      >
-                        <Form.Group>
-                          <Form.Control
-                            value={this.state.superComments1}
-                            as='textarea'
-                            type='text'
-                            placeholder='Comments...'
-                            onChange={this.handleSuperComments1}
-                            rows='3'
-                            style={{
-                              background: 'none',
-                              fontFamily: 'Helvetica, Arial'
-                            }}
-                          />
-                        </Form.Group>
-                      </div>
-                    </div>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%',
-                          marginBottom: '10px'
-                        }}
-                      >
-                        Team: {this.state.teamNum2}
-                      </div>
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Docking: {this.state.dockDefense[1]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.dockDefense[1]}
-                        onChange={event => this.handleDockDefense(event, 1)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Knocking: {this.state.knockDefense[1]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.knockDefense[1]}
-                        onChange={event => this.handleKnockDefense(event, 1)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center  ',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Blocking: {this.state.blockDefense[1]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.blockDefense[1]}
-                        onChange={event => this.handleBlockDefense(event, 1)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          display: 'inline-block',
-                          width: '80%',
-                          marginTop: '10px'
-                        }}
-                      >
-                        <Form.Group>
-                          <Form.Control
-                            value={this.state.superComments2}
-                            as='textarea'
-                            type='text'
-                            placeholder='Comments...'
-                            onChange={this.handleSuperComments2}
-                            rows='3'
-                            style={{
-                              background: 'none',
-                              fontFamily: 'Helvetica, Arial'
-                            }}
-                          />
-                        </Form.Group>
-                      </div>
-                    </div>
-                    <div className='div-form'>
-                      <div
-                        style={{
-                          textAlign: 'start',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '110%',
-                          marginBottom: '10px'
-                        }}
-                      >
-                        Team: {this.state.teamNum3}
-                      </div>
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Docking: {this.state.dockDefense[2]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.dockDefense[2]}
-                        onChange={event => this.handleDockDefense(event, 2)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Knocking: {this.state.knockDefense[2]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.knockDefense[2]}
-                        onChange={event => this.handleKnockDefense(event, 2)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          textAlign: 'center  ',
-                          fontFamily: 'Helvetica, Arial',
-                          fontSize: '100%'
-                        }}
-                      >
-                        Blocking: {this.state.blockDefense[2]}
-                      </div>
-                      <input
-                        style={{
-                          marginTop: '15px',
-                          marginBottom: '20px',
-                          width: '75%'
-                        }}
-                        min={0}
-                        max={3}
-                        step={1}
-                        className='slidercell'
-                        value={this.state.blockDefense[2]}
-                        onChange={event => this.handleBlockDefense(event, 2)}
-                        type='range'
-                      />
-                      <div
-                        style={{
-                          display: 'inline-block',
-                          width: '80%',
-                          marginTop: '10px'
-                        }}
-                      >
-                        <Form.Group>
-                          <Form.Control
-                            value={this.state.superComments3}
-                            as='textarea'
-                            type='text'
-                            placeholder='Comments...'
-                            onChange={this.handleSuperComments3}
-                            rows='3'
-                            style={{
-                              background: 'none',
-                              fontFamily: 'Helvetica, Arial'
-                            }}
-                          />
-                        </Form.Group>
-                      </div>
-                    </div>
-                    <Form.Check
-                      onChange={this.handleFollowUp}
-                      checked={this.state.markForFollowUp}
-                      custom
-                      style={{
-                        fontSize: '100%',
-                        fontFamily: 'Helvetica, Arial'
-                      }}
-                      type='checkbox'
-                      label='Mark for follow up'
-                      id='followUp'
-                    />
-                    <Button
-                      variant='success'
-                      type='btn'
-                      style={{
-                        fontFamily: 'Helvetica, Arial',
-                        boxShadow:
-                          '-3px 3px black, -2px 2px black, -1px 1px black',
-                        border: '1px solid black',
-                        marginTop: '10px'
-                      }}
-                      onClick={this.handleSubmit}
-                      className='btn-lg'
-                    >
-                      Submit
-                    </Button>
-                  </React.Fragment>
-                )}
+                    ))}
+                  </ReactSortable>
+                </div>
+                <Form.Check
+                  onChange={this.handleFollowUp}
+                  checked={this.state.markForFollowUp}
+                  custom
+                  style={{
+                    fontSize: '100%',
+                    fontFamily: 'Helvetica, Arial'
+                  }}
+                  type='checkbox'
+                  label='Mark for follow up'
+                  id='followUp'
+                />
+                <Button
+                  variant='success'
+                  type='btn'
+                  style={{
+                    fontFamily: 'Helvetica, Arial',
+                    boxShadow: '-3px 3px black, -2px 2px black, -1px 1px black',
+                    border: '1px solid black',
+                    marginTop: '10px'
+                  }}
+                  onClick={this.handleSubmit}
+                  className='btn-lg'
+                >
+                  Submit
+                </Button>
               </React.Fragment>
             ) : null}
           </div>
@@ -1931,4 +1534,4 @@ class SuperScoutContent extends Component {
   }
 }
 
-export default SuperScoutContent;
+export default DrivingContent;

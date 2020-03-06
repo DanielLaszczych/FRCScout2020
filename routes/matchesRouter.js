@@ -5,7 +5,7 @@ const ensureAdmin = require('../middlewares/ensure_admin');
 
 router.get('/competitions/:shortName/matches', (req, res) => {
   const getMatchesForCompetitionQuery =
-    'SELECT c.short_name, m.match_id as matchid, t.team_num as teamnum, m.match_num as matchnum, m.scout_name as scoutname, m.report_status as reportstatus, m.scout_name_super, m.report_status_super, m.alliance_color FROM match m INNER JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1';
+    'SELECT c.short_name, m.match_id as matchid, t.team_num as teamnum, m.match_num as matchnum, m.scout_name as scoutname, m.report_status as reportstatus, m.scout_name_super_defense, m.scout_name_super_driving, m.report_status_super_driving, m.report_status_super_defense, m.alliance_color FROM match m INNER JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1';
   const getMatchesForCompetitionValues = [req.params.shortName];
 
   db.query(getMatchesForCompetitionQuery, getMatchesForCompetitionValues)
@@ -28,7 +28,7 @@ router.get('/competitions/:shortName/matchData', (req, res) => {
         matchData: data.rows
       });
     })
-    .catch(er => console.error(e.stack));
+    .catch(e => console.error(e.stack));
 });
 
 router.get('/competitions/:shortName/team/:teamNum/matchData', (req, res) => {
@@ -47,10 +47,32 @@ router.get('/competitions/:shortName/team/:teamNum/matchData', (req, res) => {
 });
 
 router.get(
-  '/competitions/:shortName/matchNum/:matchNum/allianceColor/:allianceColor/matchData',
+  '/competitions/:shortName/matchNum/:matchNum/allianceColor/:allianceColor/drivingData',
   (req, res) => {
     const getMatchDataQuery =
-      'SELECT t.team_num, c.short_name, c.blue_key, m.match_num, m.team_order, m.alliance_color, m.scout_name_super, m.report_status_super, m.auto_team_super, m.speed, m.agility, m.counter_defense, m.dock_defense, m.knock_defense, m.block_defense, m.super_comments FROM match m RIGHT JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1 AND m.match_num = $2 AND m.alliance_color = $3';
+      'SELECT t.team_num, c.short_name, c.blue_key, m.match_num, m.team_order_driving, m.alliance_color, m.scout_name_super_driving, m.report_status_super_driving, m.auto_team_super_driving, m.speed, m.agility, m.counter_defense, m.super_comments_driving FROM match m RIGHT JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1 AND m.match_num = $2 AND m.alliance_color = $3';
+    const getMatchDataValues = [
+      req.params.shortName,
+      req.params.matchNum,
+      req.params.allianceColor
+    ];
+
+    db.query(getMatchDataQuery, getMatchDataValues)
+      .then(data => {
+        console.log(data.rows);
+        res.json({
+          matchData: data.rows
+        });
+      })
+      .catch(e => console.error(e.stack));
+  }
+);
+
+router.get(
+  '/competitions/:shortName/matchNum/:matchNum/allianceColor/:allianceColor/defenseData',
+  (req, res) => {
+    const getMatchDataQuery =
+      'SELECT t.team_num, c.short_name, c.blue_key, m.match_num, m.team_order_defense, m.alliance_color, m.scout_name_super_defense, m.report_status_super_defense, m.auto_team_super_defense, m.pinning_defense, m.knock_defense, m.block_defense, m.super_comments_defense FROM match m RIGHT JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1 AND m.match_num = $2 AND m.alliance_color = $3';
     const getMatchDataValues = [
       req.params.shortName,
       req.params.matchNum,
@@ -159,20 +181,20 @@ router.post('/submitMatchForm', (req, res) => {
     });
 });
 
-router.post('/submitSuperForm', (req, res) => {
+router.post('/submitDrivingForm', (req, res) => {
   let params = req.body;
 
   const addSuperQuery =
-    'INSERT INTO match (mapping_id, match_num, team_order, alliance_color, scout_name_super, report_status_super, auto_team_super,' +
-    'speed, agility, counter_defense, dock_defense, knock_defense, block_defense, super_comments, last_modified)' +
+    'INSERT INTO match (mapping_id, match_num, team_order_driving, alliance_color, scout_name_super_driving, report_status_super_driving, auto_team_super_driving,' +
+    'speed, agility, counter_defense, super_comments_driving, last_modified)' +
     'VALUES (' +
     '(SELECT mapping_id FROM comp_team_mapping mapping INNER JOIN competition c ON c.competition_id=mapping.competition_id INNER JOIN team t ON t.team_id=mapping.team_id WHERE c.short_name = $1 AND t.team_num = $2),' +
-    '$3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, NOW())' +
+    '$3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())' +
     'ON CONFLICT (mapping_id, match_num) DO UPDATE SET match_num = EXCLUDED.match_num,' +
-    'team_order = EXCLUDED.team_order, alliance_color = EXCLUDED.alliance_color, scout_name_super = EXCLUDED.scout_name_super, report_status_super = EXCLUDED.report_status_super,' +
-    'auto_team_super = EXCLUDED.auto_team_super, speed = EXCLUDED.speed, agility = EXCLUDED.agility,' +
-    'counter_defense = EXCLUDED.counter_defense, dock_defense = EXCLUDED.dock_defense, knock_defense = EXCLUDED.knock_defense,' +
-    'block_defense = EXCLUDED.block_defense, super_comments = EXCLUDED.super_comments, last_modified = NOW()';
+    'team_order_driving = EXCLUDED.team_order_driving, alliance_color = EXCLUDED.alliance_color, scout_name_super_driving = EXCLUDED.scout_name_super_driving, report_status_super_driving = EXCLUDED.report_status_super_driving,' +
+    'auto_team_super_driving = EXCLUDED.auto_team_super_driving, speed = EXCLUDED.speed, agility = EXCLUDED.agility,' +
+    'counter_defense = EXCLUDED.counter_defense,' +
+    'super_comments_driving = EXCLUDED.super_comments_driving, last_modified = NOW()';
   const addSuperValues = [
     params.competition,
     params.teamNum,
@@ -185,7 +207,48 @@ router.post('/submitSuperForm', (req, res) => {
     params.speed,
     params.agility,
     params.counterDefense,
-    params.dockDefense,
+    params.superComments
+  ];
+
+  db.query(addSuperQuery, addSuperValues)
+    .then(data => {
+      console.log(data);
+      res.json({
+        message: 'Submitted'
+      });
+    })
+    .catch(e => {
+      console.error(e.stack);
+      res.json({
+        message: 'Failed'
+      });
+    });
+});
+
+router.post('/submitDefenseForm', (req, res) => {
+  let params = req.body;
+
+  const addSuperQuery =
+    'INSERT INTO match (mapping_id, match_num, team_order_defense, alliance_color, scout_name_super_defense, report_status_super_defense, auto_team_super_defense,' +
+    'pinning_defense, knock_defense, block_defense, super_comments_defense, last_modified)' +
+    'VALUES (' +
+    '(SELECT mapping_id FROM comp_team_mapping mapping INNER JOIN competition c ON c.competition_id=mapping.competition_id INNER JOIN team t ON t.team_id=mapping.team_id WHERE c.short_name = $1 AND t.team_num = $2),' +
+    '$3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())' +
+    'ON CONFLICT (mapping_id, match_num) DO UPDATE SET match_num = EXCLUDED.match_num,' +
+    'team_order_defense = EXCLUDED.team_order_defense, alliance_color = EXCLUDED.alliance_color, scout_name_super_defense = EXCLUDED.scout_name_super_defense, report_status_super_defense = EXCLUDED.report_status_super_defense,' +
+    'auto_team_super_defense = EXCLUDED.auto_team_super_defense, pinning_defense = EXCLUDED.pinning_defense, knock_defense = EXCLUDED.knock_defense,' +
+    'block_defense = EXCLUDED.block_defense,' +
+    'super_comments_defense = EXCLUDED.super_comments_defense, last_modified = NOW()';
+  const addSuperValues = [
+    params.competition,
+    params.teamNum,
+    params.matchNum,
+    params.teamOrder,
+    params.allianceColor,
+    params.scoutName,
+    params.reportStatus,
+    params.autoTeam,
+    params.pinningDefense,
     params.knockDefense,
     params.blockDefense,
     params.superComments

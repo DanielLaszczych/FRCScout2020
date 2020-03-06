@@ -149,7 +149,10 @@ class MatchContent extends Component {
       )
         .then(response => response.json())
         .then(data => {
-          if (data.matchFormData.length === 0) {
+          if (
+            data.matchFormData.length === 0 &&
+            data.matchFormData[0].report_status !== 'NOT STARTED'
+          ) {
             this.setState({ retrieved: 'invalid' });
           } else {
             this.setState({ retrieved: 'valid' });

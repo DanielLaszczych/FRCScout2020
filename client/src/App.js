@@ -3,7 +3,6 @@ import './components/TabNav';
 import TabNav from './components/TabNav';
 import PitContent from './components/PitContent';
 import MatchReportList from './components/MatchReportList';
-import SuperScoutContent from './components/SuperScoutContent';
 import AnalystContent from './components/AnalystContent';
 import Login from './components/Login';
 import Logout from './components/Logout';
@@ -25,6 +24,8 @@ import PitNavigation from './components/PitNavigation';
 import MatchContent from './components/MatchContent';
 import Data from './components/Data';
 import Home from './components/Home';
+import DrivingContent from './components/DrivingContent';
+import DefenseContent from './components/DefenseContent';
 
 window.onunload = event => {
   window.scrollTo(0, 0);
@@ -128,19 +129,24 @@ class App extends Component {
         />
         <ProtectedRoute path='/matches' exact component={MatchReportList} />
         <ProtectedRoute
-          path='/supers/:competition'
+          path='/supers/defense/:competition'
           exact
-          component={SuperScoutContent}
+          component={DefenseContent}
         />
         <ProtectedRoute
-          path='/supers/:competition'
+          path='/supers/driving/:competition'
           exact
-          component={SuperScoutContent}
+          component={DrivingContent}
         />
-        <ProtectedRoute
-          path='/supers/:competition/:matchNum/:allianceColor(Red|Blue)?'
+        <AdminRoute
+          path='/supers/defense/:competition/:matchNum/:allianceColor(Red|Blue)?'
           exact
-          component={SuperScoutContent}
+          component={DefenseContent}
+        />
+        <AdminRoute
+          path='/supers/driving/:competition/:matchNum/:allianceColor(Red|Blue)?'
+          exact
+          component={DrivingContent}
         />
         <ProtectedRoute path='/analystHome' component={AnalystContent} />
         <ProtectedRoute
