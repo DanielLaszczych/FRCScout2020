@@ -173,3 +173,7 @@
   border-radius: 10px;
   font-size: 140%;
 }
+
+.ghost {
+  opacity: 0;
+}

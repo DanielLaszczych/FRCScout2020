@@ -19,7 +19,7 @@ router.get('/competitions/:shortName/matches', (req, res) => {
 
 router.get('/competitions/:shortName/matchData', (req, res) => {
   const getMatchDataForCompetitionQuery =
-    'SELECT m.match_id, t.team_num, m.match_num, m.report_status, m.cross_line, m.auto_scored, m.teleop_scored, m.rotation_control, m.rotation_timer, m.position_control, m.position_timer, m.end_game, m.end_game_timer, m.climb, m.level, m.communication, m.break, m.negatives, m.report_status_super, m.speed, m.agility, m.counter_defense, m.dock_defense, m.knock_defense, m.block_defense FROM match m INNER JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1';
+    'SELECT m.match_id, t.team_num, m.match_num, m.report_status, m.cross_line, m.auto_scored, m.teleop_scored, m.rotation_control, m.rotation_timer, m.position_control, m.position_timer, m.end_game, m.end_game_timer, m.climb, m.level, m.communication, m.break, m.negatives, m.report_status_super_driving, m.report_status_super_defense, m.speed, m.agility, m.counter_defense, m.pinning_defense, m.knock_defense, m.block_defense FROM match m INNER JOIN comp_team_mapping mapping on mapping.mapping_id=m.mapping_id INNER JOIN team t ON t.team_id=mapping.team_id INNER JOIN competition c ON c.competition_id=mapping.competition_id WHERE c.short_name = $1';
   const getMatchDataForCompetitionValues = [req.params.shortName];
 
   db.query(getMatchDataForCompetitionQuery, getMatchDataForCompetitionValues)

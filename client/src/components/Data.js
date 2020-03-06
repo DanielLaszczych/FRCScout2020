@@ -96,13 +96,19 @@ class Data extends Component {
     let matchData = data;
     let alteredData = [];
     matchData
-      .filter(match => match.report_status === 'Done')
+      .filter(match => {
+        match.report_status === 'Done' ||
+          match.report_status_super_driving === 'Done' ||
+          match.report_status_super_defense === 'Done';
+      })
       .map(match => match.team_num)
       .filter((team, index, arr) => arr.indexOf(team) === index)
       .map(team => {
         let obj = {
           teamNum: team,
-          matchesPlayed: 0,
+          matchForms: 0,
+          drivingForms: 0,
+          defenseForms: 0,
           bottomAutoScore: [],
           outerAutoScore: [],
           innerAutoScore: [],
@@ -123,14 +129,22 @@ class Data extends Component {
           break: 0,
           penalties: 0,
           yellowCards: 0,
-          redCards: 0
+          redCards: 0,
+          speed: [],
+          agility: [],
+          counterDefense: [],
+          totalDriving: [],
+          pinningDefense: [],
+          knockingDefense: [],
+          blockingDefense: [],
+          totalDefense: []
         };
         alteredData.push(obj);
       });
     matchData.map(match => {
       if (match.report_status === 'Done') {
         let index = alteredData.findIndex(x => x.teamNum === match.team_num);
-        alteredData[index].matchesPlayed++;
+        alteredData[index].matchForms++;
         alteredData[index].bottomAutoScore.push(match.auto_scored[0].value);
         alteredData[index].outerAutoScore.push(match.auto_scored[1].value);
         alteredData[index].innerAutoScore.push(match.auto_scored[2].value);
@@ -161,11 +175,28 @@ class Data extends Component {
         alteredData[index].yellowCards += match.negatives[1].value;
         alteredData[index].redCards += match.negatives[2].value;
       }
+      if (match.report_status_super_driving === 'Done') {
+        let index = alteredData.findIndex(x => x.teamNum === match.team_num);
+        alteredData[index].speed.push(match.speed);
+        alteredData[index].agility.push(match.agility);
+        alteredData[index].counterDefense.push(match.counter_defense);
+        alteredData[index].totalDriving.push(
+          match.speed + match.agility + match.counter_defense
+        );
+      }
+      if (match.report_status_super_defense === 'Done') {
+        let index = alteredData.findIndex(x => x.teamNum === match.team_num);
+        alteredData[index].pinningDefense.push(match.pinning_defense);
+        alteredData[index].knockingDefense.push(match.knocking_defense);
+        alteredData[index].blockingDefense.push(match.block_defense);
+        alteredData[index].totalDefense.push(
+          match.pinning_defense + match.knocking_defense + match.block_defense
+        );
+      }
     });
     alteredData.sort((a, b) => a.teamNum - b.teamNum);
-    this.setState({ competitionData: alteredData }, () => {
-      let newData = this.state.competitionData;
-      newData.forEach(team => {
+    alteredData.forEach(team => {
+      if (team.matchForms > 0) {
         team.autoBottomMedian = parseFloat(this.median(team.bottomAutoScore));
         team.autoBottomAverage = parseFloat(
           (
@@ -253,10 +284,11 @@ class Data extends Component {
           team.climbTimerAverage = 0;
           team.climbTimerMin = 0;
         }
-      });
-      this.setState({ competitionData: newData }, () => {
-        this.setState({ retrieved: 'compValid' });
-      });
+      } else {
+      }
+    });
+    this.setState({ competitionData: alteredData }, () => {
+      this.setState({ retrieved: 'compValid' });
     });
   };
 
