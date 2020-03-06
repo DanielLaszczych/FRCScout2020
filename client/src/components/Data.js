@@ -96,11 +96,12 @@ class Data extends Component {
     let matchData = data;
     let alteredData = [];
     matchData
-      .filter(match => {
-        match.report_status === 'Done' ||
+      .filter(
+        match =>
+          match.report_status === 'Done' ||
           match.report_status_super_driving === 'Done' ||
-          match.report_status_super_defense === 'Done';
-      })
+          match.report_status_super_defense === 'Done'
+      )
       .map(match => match.team_num)
       .filter((team, index, arr) => arr.indexOf(team) === index)
       .map(team => {
