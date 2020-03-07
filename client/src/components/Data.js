@@ -42,6 +42,7 @@ class Data extends Component {
     competition: '',
     competitions: [],
     competitionData: [],
+    filteredCompetitionData: [],
     matchData: [],
     pitData: {},
     graphData: [],
@@ -56,8 +57,10 @@ class Data extends Component {
       { id: 6, name: 'Park' },
       { id: 7, name: 'Climb' },
       { id: 8, name: 'Level' },
-      { id: 9, name: 'Penalties' },
-      { id: 10, name: 'Break/Comm.' }
+      { id: 9, name: 'Driving' },
+      { id: 10, name: 'Defense' },
+      { id: 11, name: 'Penalties' },
+      { id: 12, name: 'Break/Comm.' }
     ],
     tableSection: 'Choose',
     tableColumnSpecifics: [
@@ -79,6 +82,14 @@ class Data extends Component {
     rotationTimerDataField: 'Median',
     positionTimerDataField: 'Median',
     climbTimerDataField: 'Median',
+    speedDataField: 'Median',
+    agilityDataField: 'Median',
+    counterDefenseDataField: 'Median',
+    totalDrivingDataField: 'Median',
+    pinningDefenseDataField: 'Median',
+    knockingDefenseDataField: 'Median',
+    blockingDefenseDataField: 'Median',
+    totalDefenseDataField: 'Median',
     teamDataType: '',
     refreshable: false
   };
@@ -178,6 +189,7 @@ class Data extends Component {
       }
       if (match.report_status_super_driving === 'Done') {
         let index = alteredData.findIndex(x => x.teamNum === match.team_num);
+        alteredData[index].drivingForms++;
         alteredData[index].speed.push(match.speed);
         alteredData[index].agility.push(match.agility);
         alteredData[index].counterDefense.push(match.counter_defense);
@@ -187,6 +199,7 @@ class Data extends Component {
       }
       if (match.report_status_super_defense === 'Done') {
         let index = alteredData.findIndex(x => x.teamNum === match.team_num);
+        alteredData[index].defenseForms++;
         alteredData[index].pinningDefense.push(match.pinning_defense);
         alteredData[index].knockingDefense.push(match.knocking_defense);
         alteredData[index].blockingDefense.push(match.block_defense);
@@ -198,6 +211,9 @@ class Data extends Component {
     alteredData.sort((a, b) => a.teamNum - b.teamNum);
     alteredData.forEach(team => {
       if (team.matchForms > 0) {
+        team.crossLinePercentage =
+          ((team.crossLine / team.matchForms) * 100.0).toFixed(2) + '%';
+
         team.autoBottomMedian = parseFloat(this.median(team.bottomAutoScore));
         team.autoBottomAverage = parseFloat(
           (
@@ -248,6 +264,8 @@ class Data extends Component {
         );
         team.teleInnerMax = Math.max(...team.innerTeleScore);
 
+        team.rotationControlPercentage =
+          ((team.rotationControl / team.matchForms) * 100.0).toFixed(2) + '%';
         if (team.rotationControl !== 0) {
           team.rotationTimerMedian = this.median(team.rotationTimer);
           team.rotationTimerAverage = (
@@ -261,6 +279,8 @@ class Data extends Component {
           team.rotationTimerMin = 0;
         }
 
+        team.positionControlPercentage =
+          ((team.positionControl / team.matchForms) * 100.0).toFixed(2) + '%';
         if (team.positionControl !== 0) {
           team.positionTimerMedian = this.median(team.positionTimer);
           team.positionTimerAverage = (
@@ -274,6 +294,12 @@ class Data extends Component {
           team.positionTimerMin = 0;
         }
 
+        team.parkPercentage =
+          ((team.park / team.matchForms) * 100.0).toFixed(2) + '%';
+        team.climbPercentage =
+          ((team.climb / team.matchForms) * 100.0).toFixed(2) + '%';
+        team.levelPercentage =
+          ((team.level / team.matchForms) * 100.0).toFixed(2) + '%';
         if (team.climb !== 0) {
           team.climbTimerMedian = this.median(team.climbTimer);
           team.climbTimerAverage = (
@@ -286,9 +312,160 @@ class Data extends Component {
           team.climbTimerMin = 0;
         }
       } else {
+        team.crossLine = 'N/A';
+        team.crossLinePercentage = 'N/A';
+        team.autoBottomMedian = 'N/A';
+        team.autoBottomAverage = 'N/A';
+        team.autoBottomMax = 'N/A';
+        team.autoOuterMedian = 'N/A';
+        team.autoOuterAverage = 'N/A';
+        team.autoOuterMax = 'N/A';
+        team.autoInnerMedian = 'N/A';
+        team.autoInnerAverage = 'N/A';
+        team.autoInnerMax = 'N/A';
+        team.teleBottomMedian = 'N/A';
+        team.teleBottomAverage = 'N/A';
+        team.teleBottomMax = 'N/A';
+        team.teleOuterMedian = 'N/A';
+        team.teleOuterAverage = 'N/A';
+        team.teleOuterMax = 'N/A';
+        team.teleInnerMedian = 'N/A';
+        team.teleInnerAverage = 'N/A';
+        team.teleInnerMax = 'N/A';
+        team.rotationControl = 'N/A';
+        team.rotationControlPercentage = 'N/A';
+        team.rotationTimerMedian = 'N/A';
+        team.rotationTimerAverage = 'N/A';
+        team.rotationTimerMin = 'N/A';
+        team.positionControl = 'N/A';
+        team.positionControlPercentage = 'N/A';
+        team.positionTimerMedian = 'N/A';
+        team.positionTimerAverage = 'N/A';
+        team.positionTimerMin = 'N/A';
+        team.climb = 'N/A';
+        team.climbPercentage = 'N/A';
+        team.climbTimerMedian = 'N/A';
+        team.climbTimerAverage = 'N/A';
+        team.climbTimerMin = 'N/A';
+        team.park = 'N/A';
+        team.parkPercentage = 'N/A';
+        team.level = 'N/A';
+        team.levelPercentage = 'N/A';
+        team.buddyClimb = 'N/A';
+        team.communication = 'N/A';
+        team.break = 'N/A';
+        team.penalties = 'N/A';
+        team.yellowCards = 'N/A';
+        team.redCards = 'N/A';
+      }
+      if (team.drivingForms > 0) {
+        team.speedMedian = parseFloat(this.median(team.speed));
+        team.speedAverage = parseFloat(
+          (team.speed.reduce((a, b) => a + b, 0) / team.speed.length).toFixed(2)
+        );
+        team.speedMax = Math.max(...team.speed);
+
+        team.agilityMedian = parseFloat(this.median(team.agility));
+        team.agilityAverage = parseFloat(
+          (
+            team.agility.reduce((a, b) => a + b, 0) / team.agility.length
+          ).toFixed(2)
+        );
+        team.agilityMax = Math.max(...team.agility);
+
+        team.counterDefenseMedian = parseFloat(
+          this.median(team.counterDefense)
+        );
+        team.counterDefenseAverage = parseFloat(
+          (
+            team.counterDefense.reduce((a, b) => a + b, 0) /
+            team.counterDefense.length
+          ).toFixed(2)
+        );
+        team.counterDefenseMax = Math.max(...team.counterDefense);
+
+        team.totalDrivingMedian = parseFloat(this.median(team.totalDriving));
+        team.totalDrivingAverage = parseFloat(
+          (
+            team.totalDriving.reduce((a, b) => a + b, 0) /
+            team.totalDriving.length
+          ).toFixed(2)
+        );
+        team.totalDrivingMax = Math.max(...team.totalDriving);
+      } else {
+        team.speedMedian = 'N/A';
+        team.speedAverage = 'N/A';
+        team.speedMax = 'N/A';
+        team.agilityMedian = 'N/A';
+        team.agilityAverage = 'N/A';
+        team.agilityMax = 'N/A';
+        team.counterDefenseMedian = 'N/A';
+        team.counterDefenseAverage = 'N/A';
+        team.counterDefenseMax = 'N/A';
+        team.totalDrivingMedian = 'N/A';
+        team.totalDrivingAverage = 'N/A';
+        team.totalDrivingMax = 'N/A';
+      }
+      if (team.defenseForms > 0) {
+        team.pinningDefenseMedian = parseFloat(
+          this.median(team.pinningDefense)
+        );
+        team.pinningDefenseAverage = parseFloat(
+          (
+            team.pinningDefense.reduce((a, b) => a + b, 0) /
+            team.pinningDefense.length
+          ).toFixed(2)
+        );
+        team.pinningDefenseMax = Math.max(...team.pinningDefense);
+
+        team.knockingDefenseMedian = parseFloat(
+          this.median(team.knockingDefense)
+        );
+        team.knockingDefenseAverage = parseFloat(
+          (
+            team.knockingDefense.reduce((a, b) => a + b, 0) /
+            team.knockingDefense.length
+          ).toFixed(2)
+        );
+        team.knockingDefenseMax = Math.max(...team.knockingDefense);
+
+        team.blockingDefenseMedian = parseFloat(
+          this.median(team.blockingDefense)
+        );
+        team.blockingDefenseAverage = parseFloat(
+          (
+            team.blockingDefense.reduce((a, b) => a + b, 0) /
+            team.blockingDefense.length
+          ).toFixed(2)
+        );
+        team.blockingDefenseMax = Math.max(...team.blockingDefense);
+
+        team.totalDefenseMedian = parseFloat(this.median(team.totalDefense));
+        team.totalDefenseAverage = parseFloat(
+          (
+            team.totalDefense.reduce((a, b) => a + b, 0) /
+            team.totalDefense.length
+          ).toFixed(2)
+        );
+        team.totalDefenseMax = Math.max(...team.totalDefense);
+      } else {
+        team.pinningDefenseMedian = 'N/A';
+        team.pinningDefenseAverage = 'N/A';
+        team.pinningDefenseMax = 'N/A';
+        team.knockingDefenseMedian = 'N/A';
+        team.knockingDefenseAverage = 'N/A';
+        team.knockingDefenseMax = 'N/A';
+        team.blockingDefenseMedian = 'N/A';
+        team.blockingDefenseAverage = 'N/A';
+        team.blockingDefenseMax = 'N/A';
+        team.totalDefenseMedian = 'N/A';
+        team.totalDefenseAverage = 'N/A';
+        team.totalDefenseMax = 'N/A';
       }
     });
-    this.setState({ competitionData: alteredData }, () => {
+    this.setState({ competitionData: alteredData });
+    this.setState({ filteredCompetitionData: alteredData }, () => {
+      console.log(this.state.filteredCompetitionData);
       this.setState({ retrieved: 'compValid' });
     });
   };
@@ -987,9 +1164,32 @@ class Data extends Component {
   };
 
   changeTable = section => {
-    this.setState({ tableSection: section }, () => {
-      this.forceUpdate();
-    });
+    console.log('working');
+    this.setState({ tableSection: section });
+    if (section === 'Driving') {
+      let compData = this.state.competitionData;
+      let filteredData = compData.filter(team => team.drivingForms > 0);
+      this.setState({ filteredCompetitionData: filteredData }, () => {
+        this.forceUpdate();
+      });
+    } else if (section === 'Defense') {
+      let compData = this.state.competitionData;
+      let filteredData = compData.filter(team => team.defenseForms > 0);
+      console.log(filteredData);
+      this.setState({ filteredCompetitionData: filteredData }, () => {
+        this.forceUpdate();
+      });
+    } else if (
+      section !== ' Driving' &&
+      section !== 'Defense' &&
+      section !== 'Choose'
+    ) {
+      let compData = this.state.competitionData;
+      let filteredData = compData.filter(team => team.matchForms > 0);
+      this.setState({ filteredCompetitionData: filteredData }, () => {
+        this.forceUpdate();
+      });
+    }
   };
 
   changeAutoBottomColumn = type => {
@@ -1042,6 +1242,54 @@ class Data extends Component {
 
   changeClimbTimerColumn = type => {
     this.setState({ climbTimerDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeTotalDrivingColumn = type => {
+    this.setState({ totalDrivingDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeSpeedColumn = type => {
+    this.setState({ speedDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeAgilityColumn = type => {
+    this.setState({ agilityDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeCounterDefenseColumn = type => {
+    this.setState({ counterDefenseDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeTotalDefenseColumn = type => {
+    this.setState({ totalDefenseDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changePinningDefenseColumn = type => {
+    this.setState({ pinningDefenseDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeKnockingDefenseColumn = type => {
+    this.setState({ knockingDefenseDataField: type }, () => {
+      this.forceUpdate();
+    });
+  };
+
+  changeBlockingDefenseColumn = type => {
+    this.setState({ blockingDefenseDataField: type }, () => {
       this.forceUpdate();
     });
   };
@@ -1209,8 +1457,36 @@ class Data extends Component {
           fontSize: '100%',
           outline: 'none'
         },
-        dataField: 'matchesPlayed',
-        text: 'Matches Played'
+        hidden:
+          (this.state.tableSection === 'Driving' ||
+            this.state.tableSection === 'Defense') &&
+          this.state.tableSection !== 'Choose',
+        dataField: 'matchForms',
+        text: 'Matches Submitted'
+      },
+      {
+        headerStyle: {
+          width: '25%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        hidden:
+          this.state.tableSection !== 'Driving' &&
+          this.state.tableSection !== 'Choose',
+        dataField: 'drivingForms',
+        text: 'Drive Forms Submitted'
+      },
+      {
+        headerStyle: {
+          width: '25%',
+          fontSize: '100%',
+          outline: 'none'
+        },
+        hidden:
+          this.state.tableSection !== 'Defense' &&
+          this.state.tableSection !== 'Choose',
+        dataField: 'defenseForms',
+        text: 'Defense Forms Submitted'
       },
       {
         headerStyle: {
@@ -1266,6 +1542,20 @@ class Data extends Component {
       },
       {
         headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Baseline Cross',
+        dataField: 'crossLinePercentage',
+        text: 'Baseline Cross/Matches',
+        sortValue: (cell, row) => row.crossLine / row.matchForms
+      },
+      {
+        headerStyle: {
           fontSize: '75%',
           outline: 'none'
         },
@@ -1318,6 +1608,20 @@ class Data extends Component {
       },
       {
         headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Rotation Control',
+        dataField: 'rotationControlPercentage',
+        text: 'Rotation(s)/Matches',
+        sortValue: (cell, row) => row.rotationControl / row.matchForms
+      },
+      {
+        headerStyle: {
           fontSize: '75%',
           outline: 'none'
         },
@@ -1341,6 +1645,20 @@ class Data extends Component {
         hidden: this.state.tableSection !== 'Position Control',
         dataField: 'positionControl',
         text: 'Position(s)'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Position Control',
+        dataField: 'positionControlPercentage',
+        text: 'Position(s)/Matches',
+        sortValue: (cell, row) => row.positionControl / row.matchForms
       },
       {
         headerStyle: {
@@ -1377,9 +1695,37 @@ class Data extends Component {
           return '';
         },
         sort: true,
+        hidden: this.state.tableSection !== 'Park',
+        dataField: 'parkPercentage',
+        text: 'Park(s)/Matches',
+        sortValue: (cell, row) => row.park / row.matchForms
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
         hidden: this.state.tableSection !== 'Climb',
         dataField: 'climb',
         text: 'Climb(s)'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Climb',
+        dataField: 'climbPercentage',
+        text: 'Climb(s)/Matches',
+        sortValue: (cell, row) => row.climb / row.matchForms
       },
       {
         headerStyle: {
@@ -1419,6 +1765,20 @@ class Data extends Component {
         hidden: this.state.tableSection !== 'Level',
         dataField: 'level',
         text: 'Levels(s)'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Level',
+        dataField: 'levelPercentage',
+        text: 'Levels(s)/Matches',
+        sortValue: (cell, row) => row.level / row.matchForms
       },
       {
         headerStyle: {
@@ -1485,6 +1845,110 @@ class Data extends Component {
         hidden: this.state.tableSection !== 'Break/Comm.',
         dataField: 'communication',
         text: 'Communication'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Driving',
+        dataField: 'totalDriving' + this.state.totalDrivingDataField,
+        text: 'Total (' + this.state.totalDrivingDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Driving',
+        dataField: 'speed' + this.state.speedDataField,
+        text: 'Speed (' + this.state.speedDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Driving',
+        dataField: 'agility' + this.state.agilityDataField,
+        text: 'Agility (' + this.state.agilityDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Driving',
+        dataField: 'counterDefense' + this.state.counterDefenseDataField,
+        text: 'Counter Defense (' + this.state.counterDefenseDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Defense',
+        dataField: 'totalDefense' + this.state.totalDefenseDataField,
+        text: 'Total (' + this.state.totalDefenseDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Defense',
+        dataField: 'pinningDefense' + this.state.pinningDefenseDataField,
+        text: 'Pinning (' + this.state.pinningDefenseDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Defense',
+        dataField: 'knockingDefense' + this.state.knockingDefenseDataField,
+        text: 'Knocking (' + this.state.knockingDefenseDataField + ')'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        sortCaret: (order, column) => {
+          return '';
+        },
+        sort: true,
+        hidden: this.state.tableSection !== 'Defense',
+        dataField: 'blockingDefense' + this.state.blockingDefenseDataField,
+        text: 'Blocking (' + this.state.blockingDefenseDataField + ')'
       }
     ];
 
@@ -2281,19 +2745,185 @@ class Data extends Component {
                 <Dropdown.Menu>{tableColumnSpecificsMin}</Dropdown.Menu>
               </Dropdown>
             ) : null}
+            {this.state.tableSection === 'Driving' ? (
+              <React.Fragment>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeTotalDrivingColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.totalDrivingDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeSpeedColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.speedDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeAgilityColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.agilityDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeCounterDefenseColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.counterDefenseDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+              </React.Fragment>
+            ) : null}
+            {this.state.tableSection === 'Defense' ? (
+              <React.Fragment>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeTotalDefenseColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.totalDefenseDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changePinningDefenseColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.pinningDefenseDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeKnockingDefenseColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.knockingDefenseDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+                <Dropdown
+                  style={{ display: 'inline-block' }}
+                  focusFirstItemOnShow={false}
+                  onSelect={this.changeBlockingDefenseColumn}
+                >
+                  <Dropdown.Toggle
+                    style={{
+                      fontFamily: 'Helvetica, Arial',
+                      textAlign: 'center'
+                    }}
+                    size='sm'
+                    variant='success'
+                    id='dropdown-basic'
+                  >
+                    {this.state.blockingDefenseDataField}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
+                </Dropdown>
+              </React.Fragment>
+            ) : null}
           </div>
-          <BootstrapTable
-            striped
-            hover
-            keyField='teamNum'
-            //rowStyle={this.state.style}
-            bordered
-            bootstrap4
-            // defaultSorted={defaultSorted}
-            data={this.state.competitionData}
-            columns={compColumns}
-            filter={filterFactory()}
-          />
+          <div style={{ width: '100%', overflow: 'auto' }}>
+            <div
+              style={{ minWidth: '100%', width: '200%', maxWidth: '2000px' }}
+            >
+              <BootstrapTable
+                striped
+                hover
+                keyField='teamNum'
+                //rowStyle={this.state.style}
+                bordered
+                bootstrap4
+                // defaultSorted={defaultSorted}
+                data={this.state.filteredCompetitionData}
+                columns={compColumns}
+                filter={filterFactory()}
+              />
+            </div>
+          </div>
         </div>
       );
     } else if (this.state.retrieved === 'teamMatchValid') {
