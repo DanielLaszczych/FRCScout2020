@@ -28,6 +28,7 @@ import {
 } from 'recharts';
 import 'react-html5-camera-photo/build/css/index.css';
 import ImagePreview from './ImagePreview';
+import './PitContent.css';
 
 const scoreTypes = [
   { value: 'Average', label: 'Average' },
@@ -44,6 +45,8 @@ class Data extends Component {
     competitionData: [],
     filteredCompetitionData: [],
     matchData: [],
+    defenseData: [],
+    driveData: [],
     pitData: {},
     graphData: [],
     teamNum: '',
@@ -201,10 +204,10 @@ class Data extends Component {
         let index = alteredData.findIndex(x => x.teamNum === match.team_num);
         alteredData[index].defenseForms++;
         alteredData[index].pinningDefense.push(match.pinning_defense);
-        alteredData[index].knockingDefense.push(match.knocking_defense);
+        alteredData[index].knockingDefense.push(match.knock_defense);
         alteredData[index].blockingDefense.push(match.block_defense);
         alteredData[index].totalDefense.push(
-          match.pinning_defense + match.knocking_defense + match.block_defense
+          match.pinning_defense + match.knock_defense + match.block_defense
         );
       }
     });
@@ -465,20 +468,21 @@ class Data extends Component {
     });
     this.setState({ competitionData: alteredData });
     this.setState({ filteredCompetitionData: alteredData }, () => {
-      console.log(this.state.filteredCompetitionData);
       this.setState({ retrieved: 'compValid' });
     });
   };
 
   extractTeamMatchData = data => {
-    let matchData = data;
-    matchData = matchData.filter(match => match.report_status === 'Done');
-    if (matchData.length !== 0) {
+    let matchData = data.filter(match => match.report_status === 'Done');
+    if (matchData.length > 0) {
       let alteredData = [];
       let total = {
         matchNum: 'Averages',
         matchesPlayed: 0,
         crossLine: 0,
+        scoutName: '-',
+        autoPowerCells: '-',
+        startingPosition: '-',
         bottomAutoScored: [],
         outerAutoScored: [],
         innerAutoScored: [],
@@ -497,7 +501,9 @@ class Data extends Component {
         break: 0,
         penalties: 0,
         yellowCards: 0,
-        redCards: 0
+        redCards: 0,
+        autoComments: '-',
+        reflectionComments: '-'
       };
       matchData.forEach(match => {
         let obj = {};
@@ -505,6 +511,10 @@ class Data extends Component {
         obj.matchNum = match.match_num;
         obj.crossLine = match.cross_line;
         if (match.cross_line === 'Yes') total.crossLine++;
+
+        obj.scoutName = match.scout_name;
+        obj.autoPowerCells = match.auto_power_cells;
+        obj.startingPosition = match.starting_position;
 
         obj.bottomAutoScore = match.auto_scored[0].value;
         total.bottomAutoScored.push(match.auto_scored[0].value);
@@ -542,6 +552,7 @@ class Data extends Component {
         } else {
           obj.positionControl = match.position_control;
         }
+
         if (match.position_control === 'Yes') {
           total.positionControl++;
           total.positionTimes.push(match.position_timer / 1000.0);
@@ -585,6 +596,35 @@ class Data extends Component {
         total.yellowCards += match.negatives[1].value;
         total.redCards += match.negatives[2].value;
 
+        obj.autoComments = (
+          <React.Fragment>
+            <Button
+              variant='success'
+              onClick={() =>
+                this.showAutoComment(match.match_num, match.auto_comments)
+              }
+            >
+              Show
+            </Button>
+          </React.Fragment>
+        );
+
+        // obj.autoComments = '-';
+        obj.reflectionComments = (
+          <React.Fragment>
+            <Button
+              variant='success'
+              onClick={() =>
+                this.showReflectionComment(
+                  match.match_num,
+                  match.reflection_comments
+                )
+              }
+            >
+              Show
+            </Button>
+          </React.Fragment>
+        );
         alteredData.push(obj);
       });
 
@@ -713,12 +753,235 @@ class Data extends Component {
       let newgraphData = [].concat(alteredData);
       this.setState({ graphData: newgraphData });
       alteredData.unshift(total);
-      this.setState({ matchData: alteredData }, () => {
-        this.setState({ retrieved: 'teamMatchValid' });
-      });
+      this.setState({ matchData: alteredData });
     } else {
-      this.setState({ retrieved: 'teamMatchInvalid' });
+      this.setState({ matchData: [] });
+      this.setState({ graphData: [] });
     }
+
+    let driveData = data.filter(
+      match => match.report_status_super_driving === 'Done'
+    );
+    if (driveData.length > 0) {
+      let alteredData = [];
+      let total = {
+        matchNum: 'Averages',
+        matchesPlayed: 0,
+        scoutName: '-',
+        speeds: 0,
+        agilitys: 0,
+        counterDefenses: 0,
+        driveComment: '-'
+      };
+      driveData.forEach(match => {
+        let obj = {};
+        total.matchesPlayed++;
+        obj.matchNum = match.match_num;
+        obj.scoutName = match.scout_name_super_driving;
+        obj.speed = match.speed;
+        obj.agility = match.agility;
+        obj.counterDefense = match.counter_defense;
+        total.speeds += match.speed;
+        total.agilitys += match.agility;
+        total.counterDefenses += match.counter_defense;
+
+        obj.driveComment = (
+          <React.Fragment>
+            <Button
+              variant='success'
+              onClick={() =>
+                this.showDriveComment(
+                  match.match_num,
+                  match.super_comments_driving
+                )
+              }
+            >
+              Show
+            </Button>
+          </React.Fragment>
+        );
+        alteredData.push(obj);
+      });
+
+      total.speed = total.speeds / total.matchesPlayed;
+      total.agility = total.agilitys / total.matchesPlayed;
+      total.counterDefense = total.counterDefenses / total.matchesPlayed;
+
+      alteredData.sort((a, b) => {
+        if (a.matchNum.split('_')[0] === 'qm') {
+          if (b.matchNum.split('_')[0] === 'qm') {
+            return a.matchNum.split('_')[1] - b.matchNum.split('_')[1];
+          } else {
+            return -1;
+          }
+        } else if (a.matchNum.split('_')[0] === 'qf') {
+          if (b.matchNum.split('_')[0] === 'qf') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (b.matchNum.split('_')[0] === 'qm') {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        } else if (a.matchNum.split('_')[0] === 'sf') {
+          if (b.matchNum.split('_')[0] === 'sf') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (
+              b.matchNum.split('_')[0] === 'qm' ||
+              b.matchNum.split('_')[0] === 'qf'
+            ) {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        } else if (a.matchNum.split('_')[0] === 'f') {
+          if (b.matchNum.split('_')[0] === 'f') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (
+              b.matchNum.split('_')[0] === 'qm' ||
+              b.matchNum.split('_')[0] === 'qf' ||
+              b.matchNum.split('_')[0] === 'sf'
+            ) {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        }
+      });
+      alteredData.unshift(total);
+      this.setState({ driveData: alteredData });
+    } else {
+      this.setState({ driveData: [] });
+    }
+
+    let defenseData = data.filter(
+      match => match.report_status_super_defense === 'Done'
+    );
+    if (defenseData.length > 0) {
+      let alteredData = [];
+      let total = {
+        matchNum: 'Averages',
+        matchesPlayed: 0,
+        scoutName: '-',
+        pinningDefenses: 0,
+        knockingDefenses: 0,
+        blockingDefenses: 0,
+        defenseComment: '-'
+      };
+      defenseData.forEach(match => {
+        let obj = {};
+        total.matchesPlayed++;
+        obj.matchNum = match.match_num;
+        obj.scoutName = match.scout_name_super_defense;
+        obj.pinningDefense = match.pinning_defense;
+        obj.knockingDefense = match.knock_defense;
+        obj.blockingDefense = match.block_defense;
+        total.pinningDefenses += match.pinning_defense;
+        total.blockingDefenses += match.block_defense;
+        total.knockingDefenses += match.knock_defense;
+        obj.defenseComment = (
+          <React.Fragment>
+            <Button
+              variant='success'
+              onClick={() =>
+                this.showDefenseComment(
+                  match.match_num,
+                  match.super_comments_defense
+                )
+              }
+            >
+              Show
+            </Button>
+          </React.Fragment>
+        );
+        alteredData.push(obj);
+      });
+
+      total.pinningDefense = total.pinningDefenses / total.matchesPlayed;
+      total.blockingDefense = total.blockingDefenses / total.matchesPlayed;
+      total.knockingDefense = total.knockingDefenses / total.matchesPlayed;
+
+      alteredData.sort((a, b) => {
+        if (a.matchNum.split('_')[0] === 'qm') {
+          if (b.matchNum.split('_')[0] === 'qm') {
+            return a.matchNum.split('_')[1] - b.matchNum.split('_')[1];
+          } else {
+            return -1;
+          }
+        } else if (a.matchNum.split('_')[0] === 'qf') {
+          if (b.matchNum.split('_')[0] === 'qf') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (b.matchNum.split('_')[0] === 'qm') {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        } else if (a.matchNum.split('_')[0] === 'sf') {
+          if (b.matchNum.split('_')[0] === 'sf') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (
+              b.matchNum.split('_')[0] === 'qm' ||
+              b.matchNum.split('_')[0] === 'qf'
+            ) {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        } else if (a.matchNum.split('_')[0] === 'f') {
+          if (b.matchNum.split('_')[0] === 'f') {
+            return (
+              a.matchNum.split('_')[1] +
+              a.matchNum.split('_')[2] -
+              (b.matchNum.split('_')[1] + b.matchNum.split('_')[2])
+            );
+          } else {
+            if (
+              b.matchNum.split('_')[0] === 'qm' ||
+              b.matchNum.split('_')[0] === 'qf' ||
+              b.matchNum.split('_')[0] === 'sf'
+            ) {
+              return 1;
+            } else {
+              return -1;
+            }
+          }
+        }
+      });
+      alteredData.unshift(total);
+      this.setState({ defenseData: alteredData });
+    } else {
+      this.setState({ defenseData: [] });
+    }
+    this.setState({ retrieved: 'teamMatchValid' });
   };
 
   extractTeamPitData = pitData => {
@@ -862,8 +1125,12 @@ class Data extends Component {
               )
                 .then(response => response.json())
                 .then(data => {
-                  let matchData = data.matchData;
-                  this.extractTeamMatchData(matchData);
+                  if (data.matchData.length === 0) {
+                    this.setState({ retrieved: 'teamMatchInvalid' });
+                  } else {
+                    let matchData = data.matchData;
+                    this.extractTeamMatchData(matchData);
+                  }
                 });
             } else {
               fetch(
@@ -979,8 +1246,12 @@ class Data extends Component {
                 )
                   .then(response => response.json())
                   .then(data => {
-                    let matchData = data.matchData;
-                    this.extractTeamMatchData(matchData);
+                    if (data.matchData.length === 0) {
+                      this.setState({ retrieved: 'teamMatchInvalid' });
+                    } else {
+                      let matchData = data.matchData;
+                      this.extractTeamMatchData(matchData);
+                    }
                   });
               } else {
                 fetch(
@@ -1164,7 +1435,6 @@ class Data extends Component {
   };
 
   changeTable = section => {
-    console.log('working');
     this.setState({ tableSection: section });
     if (section === 'Driving') {
       let compData = this.state.competitionData;
@@ -1175,7 +1445,6 @@ class Data extends Component {
     } else if (section === 'Defense') {
       let compData = this.state.competitionData;
       let filteredData = compData.filter(team => team.defenseForms > 0);
-      console.log(filteredData);
       this.setState({ filteredCompetitionData: filteredData }, () => {
         this.forceUpdate();
       });
@@ -1389,6 +1658,210 @@ class Data extends Component {
         this.props.history.push(`/data/${this.state.competition}`);
       }
     }
+  };
+
+  showAutoComment = (matchNum, autoComment) => {
+    const newMatchData = this.state.matchData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          autoComments: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() => this.hideAutoComment(matchNum, autoComment)}
+                >
+                  Hide
+                </Button>
+              </div>
+              <span style={{ wordBreak: 'break-word' }}>{autoComment}</span>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ matchData: newMatchData });
+  };
+
+  hideAutoComment = (matchNum, autoComment) => {
+    const newMatchData = this.state.matchData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          autoComments: (
+            <React.Fragment>
+              <Button
+                variant='success'
+                onClick={() => this.showAutoComment(matchNum, autoComment)}
+              >
+                Show
+              </Button>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ matchData: newMatchData });
+  };
+
+  showReflectionComment = (matchNum, reflectionComment) => {
+    const newMatchData = this.state.matchData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          reflectionComments: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() =>
+                    this.hideReflectionComment(matchNum, reflectionComment)
+                  }
+                >
+                  Hide
+                </Button>
+              </div>
+              <span style={{ wordBreak: 'break-word' }}>
+                {reflectionComment}
+              </span>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ matchData: newMatchData });
+  };
+
+  hideReflectionComment = (matchNum, reflectionComment) => {
+    const newMatchData = this.state.matchData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          reflectionComments: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() =>
+                    this.showReflectionComment(matchNum, reflectionComment)
+                  }
+                >
+                  Show
+                </Button>
+              </div>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ matchData: newMatchData });
+  };
+
+  showDriveComment = (matchNum, driveComment) => {
+    const newDriveData = this.state.driveData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          driveComment: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() => this.hideDriveComment(matchNum, driveComment)}
+                >
+                  Hide
+                </Button>
+              </div>
+              <span style={{ wordBreak: 'break-word' }}>{driveComment}</span>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ driveData: newDriveData });
+  };
+
+  hideDriveComment = (matchNum, driveComment) => {
+    const newDriveData = this.state.driveData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          driveComment: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() => this.showDriveComment(matchNum, driveComment)}
+                >
+                  Show
+                </Button>
+              </div>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ driveData: newDriveData });
+  };
+
+  showDefenseComment = (matchNum, defenseComment) => {
+    const newDefenseData = this.state.defenseData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          defenseComment: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() =>
+                    this.hideDefenseComment(matchNum, defenseComment)
+                  }
+                >
+                  Hide
+                </Button>
+              </div>
+              <span style={{ wordBreak: 'break-word' }}>{defenseComment}</span>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ defenseData: newDefenseData });
+  };
+
+  hideDefenseComment = (matchNum, defenseComment) => {
+    const newDefenseData = this.state.defenseData.map(match => {
+      if (match.matchNum === matchNum) {
+        return {
+          ...match,
+          defenseComment: (
+            <React.Fragment>
+              <div>
+                <Button
+                  variant='success'
+                  onClick={() =>
+                    this.showDefenseComment(matchNum, defenseComment)
+                  }
+                >
+                  Show
+                </Button>
+              </div>
+            </React.Fragment>
+          )
+        };
+      }
+      return match;
+    });
+    this.setState({ defenseData: newDefenseData });
   };
 
   render() {
@@ -1966,6 +2439,30 @@ class Data extends Component {
           fontSize: '100%',
           outline: 'none'
         },
+        dataField: 'scoutName',
+        text: 'Scout Name'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'startingPosition',
+        text: 'Starting Position'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'autoPowerCells',
+        text: 'Cells Stored (Auto)'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
         dataField: 'crossLine',
         text: 'Baseline Cross'
       },
@@ -2080,6 +2577,124 @@ class Data extends Component {
         },
         dataField: 'level',
         text: 'Level'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'autoComments',
+        text: 'Auto Comments'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'reflectionComments',
+        text: 'Reflection Comments'
+      }
+    ];
+
+    let driveColumns = [
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'matchNum',
+        text: 'Match #'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'scoutName',
+        text: 'Scout Name'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'speed',
+        text: 'Speed'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'agility',
+        text: 'Agility'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'counterDefense',
+        text: 'Counter Defense'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'driveComment',
+        text: 'Drive Comments'
+      }
+    ];
+
+    let defenseColumns = [
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'matchNum',
+        text: 'Match #'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'scoutName',
+        text: 'Scout Name'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'pinningDefense',
+        text: 'Pinning Defense'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'knockingDefense',
+        text: 'Knocking Defense'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'blockingDefense',
+        text: 'Blocking Defense'
+      },
+      {
+        headerStyle: {
+          fontSize: '100%',
+          outline: 'none'
+        },
+        dataField: 'defenseComment',
+        text: 'Defense Comments'
       }
     ];
 
@@ -2748,7 +3363,11 @@ class Data extends Component {
             {this.state.tableSection === 'Driving' ? (
               <React.Fragment>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeTotalDrivingColumn}
                 >
@@ -2788,7 +3407,11 @@ class Data extends Component {
                   <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
                 </Dropdown>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeAgilityColumn}
                 >
@@ -2806,7 +3429,11 @@ class Data extends Component {
                   <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
                 </Dropdown>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeCounterDefenseColumn}
                 >
@@ -2828,7 +3455,11 @@ class Data extends Component {
             {this.state.tableSection === 'Defense' ? (
               <React.Fragment>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeTotalDefenseColumn}
                 >
@@ -2868,7 +3499,11 @@ class Data extends Component {
                   <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
                 </Dropdown>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeKnockingDefenseColumn}
                 >
@@ -2886,7 +3521,11 @@ class Data extends Component {
                   <Dropdown.Menu>{tableColumnSpecifics}</Dropdown.Menu>
                 </Dropdown>
                 <Dropdown
-                  style={{ display: 'inline-block' }}
+                  style={{
+                    display: 'inline-block',
+                    marginLeft: '3%',
+                    marginRight: '3%'
+                  }}
                   focusFirstItemOnShow={false}
                   onSelect={this.changeBlockingDefenseColumn}
                 >
@@ -3044,287 +3683,289 @@ class Data extends Component {
                 </Button>
               </div>
             </div>
-            {this.state.widthSize === '90%' ? (
-              <div className='graph-holder'>
-                <div className='graph-wrap'>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Bottom Cells'
-                        dataKey={'bottomAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+            {this.state.graphData.length > 0 ? (
+              this.state.widthSize === '90%' ? (
+                <div className='graph-holder'>
+                  <div className='graph-wrap'>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Bottom Cells'
                           dataKey={'bottomAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Bottom Cells'
-                        dataKey={'bottomTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'bottomAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Bottom Cells'
                           dataKey={'bottomTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'bottomTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
 
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Outer Cells'
-                        dataKey={'outerAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Outer Cells'
                           dataKey={'outerAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Outer Cells'
-                        dataKey={'outerTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'outerAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Outer Cells'
                           dataKey={'outerTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'outerTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
 
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Inner Cells'
-                        dataKey={'innerAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Inner Cells'
                           dataKey={'innerAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '15%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Inner Cells'
-                        dataKey={'innerTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'innerAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '15%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Inner Cells'
                           dataKey={'innerTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'innerTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <React.Fragment>
-                <div>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Bottom Cells'
-                        dataKey={'bottomAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+              ) : (
+                <React.Fragment>
+                  <div>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Bottom Cells'
                           dataKey={'bottomAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Bottom Cells'
-                        dataKey={'bottomTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'bottomAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Bottom Cells'
                           dataKey={'bottomTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Outer Cells'
-                        dataKey={'outerAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'bottomTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Outer Cells'
                           dataKey={'outerAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Outer Cells'
-                        dataKey={'outerTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'outerAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Outer Cells'
                           dataKey={'outerTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Auto - Inner Cells'
-                        dataKey={'innerAutoScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'outerTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Auto - Inner Cells'
                           dataKey={'innerAutoScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <ResponsiveContainer
-                    width={this.state.widthSize === '90%' ? '90%' : '50%'}
-                    height={300}
-                  >
-                    <BarChart data={this.state.graphData}>
-                      <CartesianGrid strokeDasharray='3 3' />
-                      <XAxis dataKey='matchNum'></XAxis>
-                      <YAxis padding={{ top: 25 }} />
-                      <Legend verticalAlign='top' height={36} iconSize={0} />
-                      <Bar
-                        name='Teleop - Inner Cells'
-                        dataKey={'innerTeleopScore'}
-                        fill='#28a745'
-                      >
-                        <LabelList
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'innerAutoScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                    <ResponsiveContainer
+                      width={this.state.widthSize === '90%' ? '90%' : '50%'}
+                      height={300}
+                    >
+                      <BarChart data={this.state.graphData}>
+                        <CartesianGrid strokeDasharray='3 3' />
+                        <XAxis dataKey='matchNum'></XAxis>
+                        <YAxis padding={{ top: 25 }} />
+                        <Legend verticalAlign='top' height={36} iconSize={0} />
+                        <Bar
+                          name='Teleop - Inner Cells'
                           dataKey={'innerTeleopScore'}
-                          position='insideTop'
-                          offset={-20}
-                        />
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </React.Fragment>
-            )}
+                          fill='#28a745'
+                        >
+                          <LabelList
+                            dataKey={'innerTeleopScore'}
+                            position='insideTop'
+                            offset={-20}
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </React.Fragment>
+              )
+            ) : null}
           </div>
           <div className='table-holder'>
             <div className='table-wrap'>
@@ -3338,6 +3979,58 @@ class Data extends Component {
                 // defaultSorted={defaultSorted}
                 data={this.state.matchData}
                 columns={teamColumns}
+              />
+            </div>
+          </div>
+          <div
+            style={{ height: '50px', backgroundColor: 'rgb(230, 243, 227)' }}
+          ></div>
+          <div
+            style={{
+              width: '100%',
+              overflow: 'auto',
+              backgroundColor: 'rgb(230, 243, 227)'
+            }}
+          >
+            <div
+              style={{ minWidth: '100%', width: '200%', maxWidth: '2000px' }}
+            >
+              <BootstrapTable
+                striped
+                hover
+                keyField='matchNum'
+                //rowStyle={this.state.style}
+                bordered
+                bootstrap4
+                // defaultSorted={defaultSorted}
+                data={this.state.driveData}
+                columns={driveColumns}
+              />
+            </div>
+          </div>
+          <div
+            style={{ height: '50px', backgroundColor: 'rgb(230, 243, 227)' }}
+          ></div>
+          <div
+            style={{
+              width: '100%',
+              overflow: 'auto',
+              backgroundColor: 'rgb(230, 243, 227)'
+            }}
+          >
+            <div
+              style={{ minWidth: '100%', width: '200%', maxWidth: '2000px' }}
+            >
+              <BootstrapTable
+                striped
+                hover
+                keyField='matchNum'
+                //rowStyle={this.state.style}
+                bordered
+                bootstrap4
+                // defaultSorted={defaultSorted}
+                data={this.state.defenseData}
+                columns={defenseColumns}
               />
             </div>
           </div>
