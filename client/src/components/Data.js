@@ -1240,6 +1240,7 @@ class Data extends Component {
               this.setState({
                 competition: this.props.match.params.competition
               });
+              this.setState({ teamDataType: this.props.match.params.dataType });
               if (this.props.match.params.dataType === 'match') {
                 fetch(
                   `/api/competitions/${this.props.match.params.competition}/team/${this.props.match.params.team}/matchData`
