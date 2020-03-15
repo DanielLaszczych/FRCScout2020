@@ -14,10 +14,12 @@ class TeamPickList extends Component {
     competitions: [],
     competition: '',
     pickListResults: [],
-    defaultSort: [{
-      dataField: 'totalScore',
-      order: 'desc'
-    }],
+    defaultSort: [
+      {
+        dataField: 'totalScore',
+        order: 'desc'
+      }
+    ],
     columns: [
       {
         dataField: 'teamDescriptor',
@@ -71,13 +73,13 @@ class TeamPickList extends Component {
       {
         dataField: 'totalScore',
         text: 'Total Score',
-        sort: true,
+        sort: true
       }
     ]
-  }
+  };
 
   computeTotalScore(result) {
-    const formula = [
+    const formulaRobot1 = [
       {
         dataField: 'autoScoredBottom',
         weight: 2
@@ -114,11 +116,11 @@ class TeamPickList extends Component {
         dataField: 'redCard',
         weight: -20
       }
-    ]
+    ];
 
     return formula.reduce((acc, value) => {
-      return acc + (result[value.dataField] * value.weight);
-    }, 0)
+      return acc + result[value.dataField] * value.weight;
+    }, 0);
   }
 
   componentDidMount() {
@@ -131,16 +133,17 @@ class TeamPickList extends Component {
             this.setState({ competition: c.shortname });
           }
         });
-      }).then(() => {
+      })
+      .then(() => {
         fetch(`/api/competitions/${this.state.competition}/pickLists/teams`)
           .then(response => response.json())
-          .then((data) => {
-            data.forEach((result) => {
-              result.totalScore = this.computeTotalScore(result)
+          .then(data => {
+            data.forEach(result => {
+              result.totalScore = this.computeTotalScore(result);
             });
             this.setState({
               pickListResults: data
-            })
+            });
           });
       });
   }
@@ -164,7 +167,7 @@ class TeamPickList extends Component {
           />
         </Row>
       </Container>
-    )
+    );
   }
 }
 

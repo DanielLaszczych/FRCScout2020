@@ -13,7 +13,8 @@ create table competition (
     CONSTRAINT competition_unique_key UNIQUE (short_name)
 );
 
-INSERT INTO competition (short_name, blue_key, is_current) VALUES ('HVR', 'nysu', TRUE);
+INSERT INTO competition (short_name, blue_key, is_current) VALUES ('PAL', 'scmb', TRUE);
+INSERT INTO competition (short_name, blue_key, is_current) VALUES ('HVR', 'nysu', FALSE);
 INSERT INTO competition (short_name, blue_key, is_current) VALUES ('SBPLI', 'nyli2', FALSE);
 INSERT INTO competition (short_name, blue_key, is_current) VALUES ('NYC', 'nyny', FALSE);
 INSERT INTO competition (short_name, blue_key, is_current) VALUES ('Champs', 'cmpmi' ,FALSE);
@@ -26,31 +27,70 @@ create table team (
     CONSTRAINT team_unique_key UNIQUE (team_num)
 );
 
-insert into team (team_num, team_name) values (354, 'G-House Pirates');
+insert into team (team_num, team_name) values (108, 'SigmaC@T Robotics Team');
+insert into team (team_num, team_name) values (281, 'The GreenVillains');
+insert into team (team_num, team_name) values (283, 'The Generals');
+insert into team (team_num, team_name) values (342, 'Burning Magnetos');
+insert into team (team_num, team_name) values (343, 'Metal-In-Motion');
 insert into team (team_num, team_name) values (694, 'StuyPulse');
-insert into team (team_num, team_name) values (1796, 'RoboTigers');
-insert into team (team_num, team_name) values (20, 'The Rocketeers');
-insert into team (team_num, team_name) values (250, 'The Dynamos');
-insert into team (team_num, team_name) values (303, 'The T.E.S.T. Team');
-insert into team (team_num, team_name) values (383, 'Brazilian Machine');
-insert into team (team_num, team_name) values (527, 'Red Dragons');
-insert into team (team_num, team_name) values (871, 'Robotechs');
-insert into team (team_num, team_name) values (1155, 'SciBorgs');
-insert into team (team_num, team_name) values (1156, 'Under Control');
-insert into team (team_num, team_name) values (1660, 'Harlem Knights');
-insert into team (team_num, team_name) values (1880, 'Warriors of East Harlem');
-insert into team (team_num, team_name) values (2265, 'Fe Maidens');
-insert into team (team_num, team_name) values (2601, 'Steel Hawks');
-insert into team (team_num, team_name) values (2872, 'CyberCats');
-insert into team (team_num, team_name) values (3017, 'Patriots');
-insert into team (team_num, team_name) values (3314, 'Mechanical Mustangs');
-insert into team (team_num, team_name) values (3419, 'RoHawks');
-insert into team (team_num, team_name) values (3950, 'RoboGym Robotics');
-insert into team (team_num, team_name) values (4012, 'Bad News Bots');
-insert into team (team_num, team_name) values (4091, 'DRIFT');
-insert into team (team_num, team_name) values (4122, 'Ossining O-Bots');
-
-
+insert into team (team_num, team_name) values (744, 'Shark Attack');
+insert into team (team_num, team_name) values (846, 'The Funky Monkeys');
+insert into team (team_num, team_name) values (1051, 'Technical Terminators');
+insert into team (team_num, team_name) values (1287, 'Aluminum Assault');
+insert into team (team_num, team_name) values (1293, 'Pandamaniacs');
+insert into team (team_num, team_name) values (1319, 'Flash');
+insert into team (team_num, team_name) values (1369, 'Minotaur');
+insert into team (team_num, team_name) values (1398, 'Robo-Raiders');
+insert into team (team_num, team_name) values (1539, 'Royal Robotics');
+insert into team (team_num, team_name) values (1553, 'KC Robotics Team');
+insert into team (team_num, team_name) values (1708, "AMP'D Robotics");
+insert into team (team_num, team_name) values (1758, 'Technomancers');
+insert into team (team_num, team_name) values (2183, 'Tigerbots');
+insert into team (team_num, team_name) values (2187, 'Team Volt');
+insert into team (team_num, team_name) values (2614, 'Mountaineer Area RoboticS (MARS)');
+insert into team (team_num, team_name) values (2815, 'Blue Devil Mechanics');
+insert into team (team_num, team_name) values (3140, 'Flagship');
+insert into team (team_num, team_name) values (3489, 'Category 5');
+insert into team (team_num, team_name) values (3490, 'Viper Drive');
+insert into team (team_num, team_name) values (3492, 'Putnam Area Robotics Team (P.A.R.T.s)');
+insert into team (team_num, team_name) values (3651, 'TRIBE');
+insert into team (team_num, team_name) values (3653, 'BOTCATS');
+insert into team (team_num, team_name) values (3824, 'HVA RoHAWKtics');
+insert into team (team_num, team_name) values (3976, 'Electric Hornets');
+insert into team (team_num, team_name) values (4020, 'Cyber Tribe');
+insert into team (team_num, team_name) values (4050, 'Biohazard');
+insert into team (team_num, team_name) values (4073, 'Robo Katz');
+insert into team (team_num, team_name) values (4074, 'Shark Bytes');
+insert into team (team_num, team_name) values (4075, 'Robo Tigers');
+insert into team (team_num, team_name) values (4083, 'The Iron Wolverines');
+insert into team (team_num, team_name) values (4243, 'Excelsior!');
+insert into team (team_num, team_name) values (4267, 'Brave Bots');
+insert into team (team_num, team_name) values (4451, 'ROBOTZ Garage');
+insert into team (team_num, team_name) values (4471, 'SPARTRONS');
+insert into team (team_num, team_name) values (4533, 'Wando Advanced Robotics');
+insert into team (team_num, team_name) values (4582, 'Robohawks');
+insert into team (team_num, team_name) values (4748, 'Bulldog Autobots');
+insert into team (team_num, team_name) values (4764, 'The Memphis MechWarriors');
+insert into team (team_num, team_name) values (4847, 'Techno-Logic Trojans');
+insert into team (team_num, team_name) values (4965, 'FIRE');
+insert into team (team_num, team_name) values (5022, 'Rat Rod Robotics');
+insert into team (team_num, team_name) values (5063, 'BuzzBots');
+insert into team (team_num, team_name) values (5130, 'Undercogs');
+insert into team (team_num, team_name) values (5317, '@RedhawkRobotics');
+insert into team (team_num, team_name) values (5410, 'Eaglebotics');
+insert into team (team_num, team_name) values (5472, 'Stallion Robotics: The Wyld Stallyns');
+insert into team (team_num, team_name) values (5777, 'Static Storm');
+insert into team (team_num, team_name) values (5842, 'Royal Robotics');
+insert into team (team_num, team_name) values (5943, 'The Bad News Gears');
+insert into team (team_num, team_name) values (6167, 'CB Bearbots');
+insert into team (team_num, team_name) values (6222, 'Flying Tigers');
+insert into team (team_num, team_name) values (6366, 'RAM Rodz Robotics');
+insert into team (team_num, team_name) values (6626, 'Robohana');
+insert into team (team_num, team_name) values (6693, 'TrailBLAZERS');
+insert into team (team_num, team_name) values (6961, 'SIbots');
+insert into team (team_num, team_name) values (7085, 'Paranoid Androids');
+insert into team (team_num, team_name) values (7431, 'Wingspan');
+insert into team (team_num, team_name) values (8137, 'Byting Bulldogs');
 
 create table comp_team_mapping (
  mapping_id bigint generated by default as identity primary key,
@@ -82,31 +122,47 @@ insert into comp_team_mapping (competition_id, team_id) values (1,20);
 insert into comp_team_mapping (competition_id, team_id) values (1,21);
 insert into comp_team_mapping (competition_id, team_id) values (1,22);
 insert into comp_team_mapping (competition_id, team_id) values (1,23);
-insert into comp_team_mapping (competition_id, team_id) values (2,1);
-insert into comp_team_mapping (competition_id, team_id) values (2,2);
-insert into comp_team_mapping (competition_id, team_id) values (2,3);
-insert into comp_team_mapping (competition_id, team_id) values (2,4);
-insert into comp_team_mapping (competition_id, team_id) values (2,5);
-insert into comp_team_mapping (competition_id, team_id) values (2,6);
-insert into comp_team_mapping (competition_id, team_id) values (2,7);
-insert into comp_team_mapping (competition_id, team_id) values (2,8);
-insert into comp_team_mapping (competition_id, team_id) values (2,9);
-insert into comp_team_mapping (competition_id, team_id) values (2,10);
-insert into comp_team_mapping (competition_id, team_id) values (2,11);
-insert into comp_team_mapping (competition_id, team_id) values (2,12);
-insert into comp_team_mapping (competition_id, team_id) values (2,13);
-insert into comp_team_mapping (competition_id, team_id) values (2,14);
-insert into comp_team_mapping (competition_id, team_id) values (2,15);
-insert into comp_team_mapping (competition_id, team_id) values (2,16);
-insert into comp_team_mapping (competition_id, team_id) values (2,17);
-insert into comp_team_mapping (competition_id, team_id) values (2,18);
-insert into comp_team_mapping (competition_id, team_id) values (2,19);
-insert into comp_team_mapping (competition_id, team_id) values (2,20);
-insert into comp_team_mapping (competition_id, team_id) values (2,21);
-insert into comp_team_mapping (competition_id, team_id) values (2,22);
-insert into comp_team_mapping (competition_id, team_id) values (2,23);
-
-
+insert into comp_team_mapping (competition_id, team_id) values (1,24);
+insert into comp_team_mapping (competition_id, team_id) values (1,25);
+insert into comp_team_mapping (competition_id, team_id) values (1,26);
+insert into comp_team_mapping (competition_id, team_id) values (1,27);
+insert into comp_team_mapping (competition_id, team_id) values (1,28);
+insert into comp_team_mapping (competition_id, team_id) values (1,29);
+insert into comp_team_mapping (competition_id, team_id) values (1,30);
+insert into comp_team_mapping (competition_id, team_id) values (1,31);
+insert into comp_team_mapping (competition_id, team_id) values (1,32);
+insert into comp_team_mapping (competition_id, team_id) values (1,33);
+insert into comp_team_mapping (competition_id, team_id) values (1,34);
+insert into comp_team_mapping (competition_id, team_id) values (1,35);
+insert into comp_team_mapping (competition_id, team_id) values (1,36);
+insert into comp_team_mapping (competition_id, team_id) values (1,37);
+insert into comp_team_mapping (competition_id, team_id) values (1,38);
+insert into comp_team_mapping (competition_id, team_id) values (1,39);
+insert into comp_team_mapping (competition_id, team_id) values (1,40);
+insert into comp_team_mapping (competition_id, team_id) values (1,41);
+insert into comp_team_mapping (competition_id, team_id) values (1,42);
+insert into comp_team_mapping (competition_id, team_id) values (1,43);
+insert into comp_team_mapping (competition_id, team_id) values (1,44);
+insert into comp_team_mapping (competition_id, team_id) values (1,45);
+insert into comp_team_mapping (competition_id, team_id) values (1,46);
+insert into comp_team_mapping (competition_id, team_id) values (1,47);
+insert into comp_team_mapping (competition_id, team_id) values (1,48);
+insert into comp_team_mapping (competition_id, team_id) values (1,49);
+insert into comp_team_mapping (competition_id, team_id) values (1,50);
+insert into comp_team_mapping (competition_id, team_id) values (1,51);
+insert into comp_team_mapping (competition_id, team_id) values (1,52);
+insert into comp_team_mapping (competition_id, team_id) values (1,53);
+insert into comp_team_mapping (competition_id, team_id) values (1,54);
+insert into comp_team_mapping (competition_id, team_id) values (1,55);
+insert into comp_team_mapping (competition_id, team_id) values (1,56);
+insert into comp_team_mapping (competition_id, team_id) values (1,57);
+insert into comp_team_mapping (competition_id, team_id) values (1,58);
+insert into comp_team_mapping (competition_id, team_id) values (1,59);
+insert into comp_team_mapping (competition_id, team_id) values (1,60);
+insert into comp_team_mapping (competition_id, team_id) values (1,61);
+insert into comp_team_mapping (competition_id, team_id) values (1,62);
+insert into comp_team_mapping (competition_id, team_id) values (1,63);
+insert into comp_team_mapping (competition_id, team_id) values (1,64);
 
 create table match (
     match_id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -178,12 +234,6 @@ create table pit (
     last_modified timestamp(0) NOT NULL DEFAULT (now())::timestamp(0),
     CONSTRAINT mapping_key UNIQUE (mapping_id)
 );
-
-insert into pit (mapping_id, status) values (1, 'Follow Up');
-insert into pit (mapping_id, status) values (2, 'Follow Up');
-insert into pit (mapping_id, status) values (3, 'Follow Up');
-insert into pit (mapping_id, status) values (4, 'Follow Up');
-insert into pit (mapping_id, status) values (5, 'Follow Up');
 
  drop table if exists users;
  drop type if exists user_role;
